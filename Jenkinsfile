@@ -20,6 +20,7 @@ pipeline {
     }
 
     stage('Install Backend') {
+      agent { docker { image 'node:20-alpine' } }
       steps {
         dir('backend') {
           sh 'npm ci'
@@ -28,6 +29,7 @@ pipeline {
     }
 
     stage('Install Frontend') {
+      agent { docker { image 'node:20-alpine' } }
       steps {
         dir('frontend') {
           sh 'npm ci'
@@ -36,6 +38,7 @@ pipeline {
     }
 
     stage('Verify') {
+      agent { docker { image 'node:20-alpine' } }
       parallel {
         stage('Backend Syntax Check') {
           steps {
