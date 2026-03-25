@@ -20,39 +20,28 @@ pipeline {
     }
 
     stage('Install Backend') {
-      agent { docker { image 'node:20-alpine' } }
       steps {
-        dir('backend') {
-          sh 'npm ci'
-        }
+        sh "docker run --rm -v \${WORKSPACE}:/app -w /app/backend node:20-alpine npm ci"
       }
     }
 
     stage('Install Frontend') {
-      agent { docker { image 'node:20-alpine' } }
       steps {
-        dir('frontend') {
-          sh 'npm ci'
-        }
+        sh "docker run --rm -v \${WORKSPACE}:/app -w /app/frontend node:20-alpine npm ci"
       }
     }
 
     stage('Verify') {
-      agent { docker { image 'node:20-alpine' } }
       parallel {
         stage('Backend Syntax Check') {
           steps {
-            dir('backend') {
-              sh 'node --check server.js'
-            }
+            sh "docker run --rm -v \${WORKSPACE}:/app -w /app/backend node:20-alpine node --check server.js"
           }
         }
 
         stage('Frontend Build') {
           steps {
-            dir('frontend') {
-              sh 'npm run build'
-            }
+            sh "docker run --rm -v \${WORKSPACE}:/app -w /app/frontend node:20-alpine npm run build"
           }
         }
       }
