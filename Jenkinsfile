@@ -19,56 +19,42 @@ pipeline {
       }
     }
 
-    stage('Install Backend') {
-      steps {
-        sh "docker run --rm -v \${WORKSPACE}:/app -w /app/backend node:20-alpine npm ci"
-      }
-    }
-
-    stage('Install Frontend') {
-      steps {
-        sh "docker run --rm -v \${WORKSPACE}:/app -w /app/frontend node:20-alpine npm ci"
-      }
-    }
-
-    stage('Verify') {
+    stage('Build and Verify') {
       parallel {
-        stage('Backend Syntax Check') {
+        stage('Backend') {
           steps {
-            sh "docker run --rm -v \${WORKSPACE}:/app -w /app/backend node:20-alpine node --check server.js"
+            script {
+              def backendImage = env.DOCKER_REGISTRY?.trim()
+                ? "${env.DOCKER_REGISTRY}/${env.BACKEND_IMAGE_NAME}:${env.IMAGE_TAG}"
+                : "${env.BACKEND_IMAGE_NAME}:${env.IMAGE_TAG}"
+              
+              sh "docker build -t ${backendImage} -f backend/Dockerfile backend"
+              sh "docker run --rm ${backendImage} node --check server.js"
+              
+              env.BACKEND_IMAGE = backendImage
+            }
           }
         }
 
-        stage('Frontend Build') {
+        stage('Frontend') {
           steps {
-            sh "docker run --rm -v \${WORKSPACE}:/app -w /app/frontend node:20-alpine npm run build"
+            script {
+              def frontendImage = env.DOCKER_REGISTRY?.trim()
+                ? "${env.DOCKER_REGISTRY}/${env.FRONTEND_IMAGE_NAME}:${env.IMAGE_TAG}"
+                : "${env.FRONTEND_IMAGE_NAME}:${env.IMAGE_TAG}"
+
+              sh """
+                docker build \
+                  --build-arg VITE_API_BASE_URL='${env.VITE_API_BASE_URL ?: "http://localhost:8000"}' \
+                  --build-arg VITE_GOOGLE_CLIENT_ID='${env.VITE_GOOGLE_CLIENT_ID ?: ""}' \
+                  --build-arg VITE_GITHUB_CLIENT_ID='${env.VITE_GITHUB_CLIENT_ID ?: ""}' \
+                  -t ${frontendImage} \
+                  -f frontend/Dockerfile frontend
+              """
+              
+              env.FRONTEND_IMAGE = frontendImage
+            }
           }
-        }
-      }
-    }
-
-    stage('Build Docker Images') {
-      steps {
-        script {
-          def backendImage = env.DOCKER_REGISTRY?.trim()
-            ? "${env.DOCKER_REGISTRY}/${env.BACKEND_IMAGE_NAME}:${env.IMAGE_TAG}"
-            : "${env.BACKEND_IMAGE_NAME}:${env.IMAGE_TAG}"
-          def frontendImage = env.DOCKER_REGISTRY?.trim()
-            ? "${env.DOCKER_REGISTRY}/${env.FRONTEND_IMAGE_NAME}:${env.IMAGE_TAG}"
-            : "${env.FRONTEND_IMAGE_NAME}:${env.IMAGE_TAG}"
-
-          sh "docker build -t ${backendImage} -f backend/Dockerfile backend"
-          sh """
-            docker build \
-              --build-arg VITE_API_BASE_URL='${env.VITE_API_BASE_URL ?: "http://localhost:8000"}' \
-              --build-arg VITE_GOOGLE_CLIENT_ID='${env.VITE_GOOGLE_CLIENT_ID ?: ""}' \
-              --build-arg VITE_GITHUB_CLIENT_ID='${env.VITE_GITHUB_CLIENT_ID ?: ""}' \
-              -t ${frontendImage} \
-              -f frontend/Dockerfile frontend
-          """
-
-          env.BACKEND_IMAGE = backendImage
-          env.FRONTEND_IMAGE = frontendImage
         }
       }
     }
