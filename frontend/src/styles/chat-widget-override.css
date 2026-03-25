@@ -1,0 +1,25 @@
+/* Raise on top of charts/cards */
+#smart-spend-chat,
+.smart-spend-chat,
+.chat-widget,
+.chat-modal { z-index: 9999 !important; }
+
+/* Make the modal a bit wider/taller */
+.smart-spend-chat .modal,
+.chat-modal {
+  width: 380px !important;
+  max-height: 72vh !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,.15) !important;
+}
+
+/* Scrollable body */
+.smart-spend-chat .modal .body,
+.chat-modal .body { max-height: 56vh !important; overflow-y: auto !important; }
+
+/* Input contrast */
+.smart-spend-chat .input-row input,
+.chat-modal .input-row input {
+  background: #fff !important;
+  border: 1px solid rgba(0,0,0,.08) !important;
+}
