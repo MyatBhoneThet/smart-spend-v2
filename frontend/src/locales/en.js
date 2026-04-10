@@ -164,7 +164,6 @@ export default {
     highestSingle: "Highest Single",
     average: "Average",
     export: "Export",
-    bulkDelete: "Bulk Delete",
     trackSpending: "Track your spending",
     addExpense: "Add Expense",
     spentSoFar: "Spent so far",

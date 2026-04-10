@@ -11,6 +11,10 @@ export default function SideMenu() {
   const { t } = useT();
   const navigate = useNavigate();
   const location = useLocation();
+  const tt = (key, fallback) => {
+    const translated = t?.(key);
+    return translated && translated !== key ? translated : fallback;
+  };
 
   const isDarkTheme = prefs?.theme === "dark";
   const containerClass = "flex min-h-full flex-col px-3 py-5 lg:px-4 lg:py-6";

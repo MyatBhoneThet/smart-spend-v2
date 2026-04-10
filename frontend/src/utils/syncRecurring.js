@@ -25,7 +25,7 @@ export async function syncRecurring({ silent = true, showZero = false } = {}) {
       toast.success(msg);
     }
     return { createdIncome, createdExpense, createdTx, total };
-  } catch (e) {
+  } catch {
     if (!silent) toast.error('Failed to sync recurring.');
     return { createdIncome: 0, createdExpense: 0, createdTx: 0, total: 0 };
   }

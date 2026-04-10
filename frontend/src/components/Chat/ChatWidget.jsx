@@ -153,7 +153,7 @@ export default function ChatWidget({ side = 'left' }) {
         { role: 'user', content: `${kind} — ${rangePretty(kRange)}` },
         { role: 'assistant', content: `${title} = ${format(total)}` },
       ]);
-    } catch (e) {
+    } catch {
       setMessages((cur) => [
         ...cur,
         { role: 'assistant', content: 'Unable to fetch totals. Check the analytics endpoint.' },

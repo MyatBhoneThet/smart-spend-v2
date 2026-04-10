@@ -55,7 +55,9 @@ export default function useSpeechToText({
     recRef.current = r;
 
     return () => {
-      try { r.stop(); } catch {}
+      try { r.stop(); } catch {
+        // Ignore cleanup errors from the speech API.
+      }
       recRef.current = null;
     };
   }, [lang, interim, continuous, onFinal]);
@@ -67,12 +69,16 @@ export default function useSpeechToText({
     try {
       recRef.current.start(); // must be called from a user gesture
       setListening(true);
-    } catch {}
+    } catch {
+      // Ignore start failures when the browser blocks recognition.
+    }
   }, []);
 
   const stop = useCallback(() => {
     if (!recRef.current) return;
-    try { recRef.current.stop(); } catch {}
+    try { recRef.current.stop(); } catch {
+      // Ignore stop failures when recognition is already inactive.
+    }
   }, []);
 
   const toggle = useCallback(() => (listening ? stop() : start()), [listening, start, stop]);

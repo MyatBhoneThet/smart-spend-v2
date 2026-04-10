@@ -164,7 +164,6 @@ export default {
     highestSingle: "สูงสุดต่อรายการ",
     average: "เฉลี่ย",
     export: "ส่งออก",
-    bulkDelete: "ลบเป็นกลุ่ม",
     trackSpending: "ติดตามการใช้จ่ายของคุณ",
     addExpense: "เพิ่มค่าใช้จ่าย",
     spentSoFar: "ใช้จ่ายแล้ว",

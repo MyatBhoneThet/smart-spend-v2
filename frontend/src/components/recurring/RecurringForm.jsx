@@ -15,24 +15,30 @@ export default function RecurringForm({ initial, onSaved, onCancel }) {
     return val && val !== key ? val : fallback;
   };
 
-  const [form, setForm] = useState(() => ({
-    type: 'expense',
-    categoryId: '',
-    category: 'Rent',
-    source: '',
-    icon: '💸',
-    amount: '',
-    // NEW: frequency (defaults to monthly; your engine also supports it)
-    repeat: 'monthly',
-    dayOfMonth: 1,
-    startDate: new Date().toISOString().slice(0,10),
-    endDate: '',
-    timezone: 'Asia/Bangkok', // UI-only
-    notes: '',
-    isActive: true,
-    ...(initial || {}),
-    amount: initial ? String(initial.amount ?? '') : '',
-  }));
+  const [form, setForm] = useState(() => {
+    const base = {
+      type: 'expense',
+      categoryId: '',
+      category: 'Rent',
+      source: '',
+      icon: '💸',
+      amount: '',
+      // NEW: frequency (defaults to monthly; your engine also supports it)
+      repeat: 'monthly',
+      dayOfMonth: 1,
+      startDate: new Date().toISOString().slice(0,10),
+      endDate: '',
+      timezone: 'Asia/Bangkok', // UI-only
+      notes: '',
+      isActive: true,
+      ...(initial || {}),
+    };
+
+    return {
+      ...base,
+      amount: initial ? String(initial.amount ?? '') : '',
+    };
+  });
 
   const [saving, setSaving] = useState(false);
   function setField(k, v) { setForm((f) => ({ ...f, [k]: v })); }

@@ -86,7 +86,7 @@ export default function GoalList() {
     const n = Number(amt || 0);
     if (!n || n <= 0) return;
     try {
-      const { data } = await axiosInstance.post(API_PATHS.GOALS.AUTO_ALLOCATE, { amount: n });
+      await axiosInstance.post(API_PATHS.GOALS.AUTO_ALLOCATE, { amount: n });
       toast.success('Auto-allocated');
       await load();
     } catch (err) {

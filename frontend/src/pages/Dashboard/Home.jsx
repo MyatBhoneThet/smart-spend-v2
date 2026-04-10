@@ -33,7 +33,6 @@ const Home = () => {
   const tt = (k, f) => { const v = t?.(k); return v && v !== k ? v : f; };
 
   const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('Y');
 
   const formatDayLabel = (date) =>
@@ -46,14 +45,11 @@ const Home = () => {
     let active = true;
 
     const load = async () => {
-      setLoading(true);
       try {
         const { data } = await axiosInstance.get(API_PATHS.DASHBOARD.GET_DATA(selectedPeriod));
         if (active) setDashboardData(data || null);
       } catch (error) {
         console.error('Dashboard fetch error:', error);
-      } finally {
-        if (active) setLoading(false);
       }
     };
 
