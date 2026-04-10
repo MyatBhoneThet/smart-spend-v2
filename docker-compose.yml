@@ -22,8 +22,8 @@ services:
     environment:
       PORT: 8000
       NODE_ENV: production
-      MONGO_URI: mongodb+srv://swanyi:Q1nHuNZinZDiamcQ@expensetracker.0kwoqbt.mongodb.net/smartspend?retryWrites=true&w=majority&appName=expenseTracker
-      JWT_SECRET: change-me
+      MONGO_URI: ${MONGO_URI:-mongodb://mongo:27017/smartspend}
+      JWT_SECRET: ${JWT_SECRET:-change-me}
       CORS_ORIGIN: http://localhost:3000
       FRONTEND_URL: http://localhost:3000
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}

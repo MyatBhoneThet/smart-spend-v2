@@ -88,6 +88,8 @@ If your compose setup is configured, run from project root:
 docker compose up --build
 ```
 
+For Docker, set `MONGO_URI` and `JWT_SECRET` in your shell or a `.env` file if you want to override the safe local defaults.
+
 ## Notes
 
 - If you see `ERR_CONNECTION_REFUSED` on `/api/v1/auth/me`, backend is not running or `VITE_API_BASE_URL` is wrong.
@@ -97,4 +99,3 @@ docker compose up --build
 
 - Backend docs: [`backend/README.md`](./backend/README.md)
 - Frontend docs: [`frontend/README.md`](./frontend/README.md)
-t
