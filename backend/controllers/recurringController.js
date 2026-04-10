@@ -1,6 +1,7 @@
 // backend/controllers/recurringController.js
 const RecurringRule = require('../models/RecurringRule');
 const { runRecurrenceOnce } = require('../services/recurrenceEngine');
+const { buildUserQuery } = require('../utils/userQuery');
 
 // Create rule
 exports.createRule = async (req, res, next) => {
@@ -14,8 +15,10 @@ exports.createRule = async (req, res, next) => {
     const rule = await RecurringRule.create({
       userId: req.user._id,
       type: body.type,
+      categoryId: body.categoryId || undefined,
       category: body.category,
       source: body.source || '',
+      icon: body.icon || '',
       amount: Number(body.amount),
       repeat,
       dayOfMonth: body.dayOfMonth || undefined,
@@ -33,7 +36,7 @@ exports.createRule = async (req, res, next) => {
 // List rules
 exports.getRules = async (req, res, next) => {
   try {
-    const rules = await RecurringRule.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    const rules = await RecurringRule.find(buildUserQuery(req.user._id)).sort({ createdAt: -1 });
     res.json(rules);
   } catch (err) { next(err); }
 };
@@ -50,12 +53,14 @@ exports.updateRule = async (req, res, next) => {
       }
     }
     const rule = await RecurringRule.findOneAndUpdate(
-      { _id: id, userId: req.user._id },
+      { _id: id, ...buildUserQuery(req.user._id) },
       {
         $set: {
           type: body.type,
+          categoryId: body.categoryId,
           category: body.category,
           source: body.source,
+          icon: body.icon,
           amount: body.amount,
           repeat: body.repeat,
           dayOfMonth: body.dayOfMonth,
@@ -79,7 +84,7 @@ exports.toggleRule = async (req, res, next) => {
     const id = req.params.id;
     const { isActive } = req.body || {};
     const rule = await RecurringRule.findOneAndUpdate(
-      { _id: id, userId: req.user._id },
+      { _id: id, ...buildUserQuery(req.user._id) },
       { $set: { isActive: !!isActive } },
       { new: true }
     );
@@ -92,7 +97,7 @@ exports.toggleRule = async (req, res, next) => {
 exports.deleteRule = async (req, res, next) => {
   try {
     const id = req.params.id;
-    await RecurringRule.deleteOne({ _id: id, userId: req.user._id });
+    await RecurringRule.deleteOne({ _id: id, ...buildUserQuery(req.user._id) });
     res.json({ ok: true });
   } catch (err) { next(err); }
 };

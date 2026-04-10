@@ -5,7 +5,7 @@ import axiosInstance from '../../utils/axiosInstance';
 import { API_PATHS } from '../../utils/apiPaths';
 import { UserContext } from '../../context/UserContext';
 import useT from '../../hooks/useT';
-import DashboardLayout from '../../components/layouts/DashboardLayout';
+import DashboardLayout from '../../components/layout/DashboardLayout';
 import { useCurrency } from '../../context/CurrencyContext';
 import { clearStoredToken } from '../../utils/authSession';
 
@@ -116,33 +116,41 @@ export default function Settings() {
   };
 
   const last = lastUpdated ? new Date(lastUpdated).toLocaleString() : '—';
+  const pageClass = isDark
+    ? 'bg-[radial-gradient(circle_at_top_left,rgba(217,255,52,0.11),transparent_26%),radial-gradient(circle_at_top_right,rgba(71,215,255,0.08),transparent_22%),linear-gradient(180deg,#090b11_0%,#05070b_100%)] text-white'
+    : 'bg-[radial-gradient(circle_at_top_left,rgba(217,255,52,0.14),transparent_24%),radial-gradient(circle_at_top_right,rgba(255,255,255,0.72),transparent_20%),linear-gradient(180deg,#fefbf8_0%,#f7f3ea_100%)] text-[#11131b]';
   const cardClass = isDark
-    ? 'border-white/8 bg-[#11131b] text-white shadow-[0_8px_30px_rgba(0,0,0,0.45)]'
-    : 'border-black/8 bg-[rgba(255,253,247,0.96)] text-[#11131b] shadow-[0_16px_40px_rgba(15,23,42,0.08)]';
-  const sectionDivider = isDark ? 'border-white/8' : 'border-black/8';
-  const mutedText = isDark ? 'text-[#6c7086]' : 'text-[#6b6f80]';
-  const labelText = isDark ? 'text-[#7b8095]' : 'text-[#6b7080]';
+    ? 'border-white/10 bg-white/[0.05] text-white shadow-[0_24px_90px_rgba(0,0,0,0.35)] ring-1 ring-white/[0.08] backdrop-blur-2xl'
+    : 'border-white/28 bg-white/28 text-[#11131b] shadow-[0_24px_90px_rgba(15,23,42,0.08)] ring-1 ring-white/45 backdrop-blur-3xl';
+  const sectionDivider = isDark ? 'border-white/10' : 'border-white/45';
+  const mutedText = isDark ? 'text-[#7b8095]' : 'text-[#6b6f80]';
+  const labelText = isDark ? 'text-[#8a90a7]' : 'text-[#6b7080]';
   const inputClass = isDark
-    ? 'border-white/10 bg-white/[0.03] text-white'
-    : 'border-black/10 bg-white text-[#11131b]';
+    ? 'border-white/10 bg-white/[0.05] text-white placeholder:text-[#848aa0]'
+    : 'border-white/28 bg-white/28 text-[#11131b] placeholder:text-[#8a8f9f] backdrop-blur-3xl';
   const outlineButton = isDark
-    ? 'border-white/10 text-[#d0d3e4] hover:bg-white/[0.05]'
-    : 'border-black/10 text-[#31374a] hover:bg-black/[0.04]';
+    ? 'border-white/10 text-[#d0d3e4] hover:bg-white/[0.08] backdrop-blur-2xl'
+    : 'border-white/28 text-[#31374a] hover:bg-white/42 backdrop-blur-3xl';
   const subtleSurface = isDark
-    ? 'border-white/8 bg-white/[0.03]'
-    : 'border-black/8 bg-[rgba(17,19,27,0.03)]';
+    ? 'border-white/10 bg-white/[0.05]'
+    : 'border-white/28 bg-white/22 backdrop-blur-3xl';
 
   return (
     <DashboardLayout activeMenu="Settings">
-      <div className={`absolute inset-0 overflow-y-auto ${isDark ? 'bg-[#090b11] text-white' : 'bg-[#f6f1e8] text-[#11131b]'}`}>
-        <div className="mx-auto max-w-[1600px] p-4 pt-6 md:p-8 md:pt-10">
-          <div className={`mb-8 flex flex-col gap-5 border-b pb-6 md:flex-row md:items-start md:justify-between ${sectionDivider}`}>
+      <div className={`absolute inset-0 overflow-y-auto overflow-x-hidden ${pageClass}`}>
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className={`absolute -left-20 top-20 h-80 w-80 rounded-full blur-3xl ${isDark ? 'bg-[#d9ff34]/10' : 'bg-[#d9ff34]/18'}`} />
+          <div className={`absolute right-6 top-40 h-96 w-96 rounded-full blur-3xl ${isDark ? 'bg-[#8b5cf6]/10' : 'bg-[#8b5cf6]/12'}`} />
+          <div className={`absolute bottom-0 left-1/3 h-[26rem] w-[26rem] rounded-full blur-3xl ${isDark ? 'bg-[#47d7ff]/8' : 'bg-white/50'}`} />
+        </div>
+        <div className="relative mx-auto max-w-[1320px] p-4 pt-4 md:p-5 md:pt-6">
+          <div className={`mb-6 flex flex-col gap-4 border-b pb-5 md:flex-row md:items-start md:justify-between ${sectionDivider}`}>
             <div>
-              <h1 className="text-3xl font-black uppercase tracking-[0.2em]" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-                SETTINGS
+              <h1 className="text-2xl font-black uppercase tracking-[0.18em]" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                {tt('menu.settings', 'SETTINGS')}
               </h1>
               <p className={`mt-2 text-sm ${mutedText}`}>
-                Preferences, security, and account control
+                {tt('settings.subtitle', 'Preferences, security, and account control')}
               </p>
             </div>
 
@@ -152,7 +160,7 @@ export default function Settings() {
                 onClick={resetPreferences}
                 className={`rounded-2xl border px-5 py-3 text-sm font-bold ${outlineButton}`}
               >
-                Reset to Defaults
+                {tt('settings.resetDefaults', 'Reset to Defaults')}
               </button>
               <button
                 type="button"
@@ -161,25 +169,25 @@ export default function Settings() {
                 className={`rounded-2xl px-6 py-3 text-sm font-black ${
                   savingPrefs
                     ? 'cursor-not-allowed bg-white/10 text-[#7b8095]'
-                    : 'bg-[#d9ff34] text-black hover:bg-[#cbf029]'
+                    : isDark ? 'bg-[#d9ff34] text-black hover:bg-[#cbf029]' : 'bg-[#84cc16] text-white hover:bg-[#65a30d]'
                 }`}
               >
-                {savingPrefs ? 'Saving...' : 'Save Changes'}
+                {savingPrefs ? tt('common.saving', 'Saving...') : tt('settings.saveChanges', 'Save Changes')}
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-            <section className={`rounded-[28px] border p-8 xl:col-span-2 ${cardClass}`}>
-              <h2 className={`text-[22px] font-bold ${isDark ? 'text-white' : 'text-[#11131b]'}`}>General Settings</h2>
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+            <section className={`rounded-[24px] border p-6 xl:col-span-2 ${cardClass}`}>
+              <h2 className={`text-[20px] font-bold ${isDark ? 'text-white' : 'text-[#11131b]'}`}>{tt('settings.general', 'General Settings')}</h2>
               <p className={`mt-2 text-sm ${mutedText}`}>
-                Configure your basic preferences and display options.
+                {tt('settings.generalDesc', 'Configure your basic preferences and display options.')}
               </p>
 
-              <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="md:col-span-2">
                   <label className={`mb-2 block text-xs font-semibold uppercase tracking-[0.18em] ${labelText}`}>
-                    Theme
+                    {tt('settings.theme', 'Theme')}
                   </label>
                   <div className="flex gap-3">
                     {['light', 'dark'].map((opt) => (
@@ -189,13 +197,15 @@ export default function Settings() {
                         onClick={() => update('theme', opt)}
                         className={`rounded-2xl border px-5 py-3 text-sm font-bold capitalize ${
                           settings.theme === opt
+                        ? isDark 
                             ? 'border-[#d9ff34] bg-[#d9ff34]/10 text-[#d9ff34]'
+                            : 'border-[#84cc16] bg-[#84cc16]/10 text-[#84cc16]'
                             : isDark
                               ? 'border-white/10 bg-white/[0.03] text-[#d0d3e4]'
                               : 'border-black/10 bg-white text-[#31374a]'
                         }`}
                       >
-                        {opt}
+                        {tt(`settings.themes.${opt}`, opt)}
                       </button>
                     ))}
                   </div>
@@ -203,22 +213,22 @@ export default function Settings() {
 
                 <div className="md:col-span-2">
                   <label className={`mb-2 block text-xs font-semibold uppercase tracking-[0.18em] ${labelText}`}>
-                    Language
+                    {tt('settings.language', 'Language')}
                   </label>
                   <select
                     className={`w-full rounded-2xl border px-4 py-3 outline-none ${inputClass}`}
                     value={settings.language}
                     onChange={(e) => update('language', e.target.value)}
                   >
-                    <option value="en">English</option>
-                    <option value="th">Thai</option>
-                    <option value="my">Burmese</option>
+                    <option value="en">{tt('settings.lang.en', 'English')}</option>
+                    <option value="th">{tt('settings.lang.th', 'Thai')}</option>
+                    <option value="my">{tt('settings.lang.my', 'Burmese')}</option>
                   </select>
                 </div>
 
                 <div className="md:col-span-2">
                   <label className={`mb-2 block text-xs font-semibold uppercase tracking-[0.18em] ${labelText}`}>
-                    Currency
+                    {tt('settings.currency', 'Currency')}
                   </label>
                   <select
                     className={`w-full rounded-2xl border px-4 py-3 outline-none ${inputClass}`}
@@ -234,44 +244,44 @@ export default function Settings() {
                     <div>
                       1 THB ≈ {rates?.USD ? rates.USD.toFixed(4) : '…'} USD • {rates?.MMK ? Math.round(rates.MMK).toLocaleString() : '…'} MMK
                     </div>
-                    <div className="mt-1">Updated: {last}</div>
+                    <div className="mt-1">{tt('settings.updatedAt', 'Updated')}: {last}</div>
                     <button
                       type="button"
                       onClick={refreshRates}
                       disabled={loading}
                       className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${outlineButton}`}
                     >
-                      {loading ? 'Refreshing...' : 'Refresh Rates'}
+                      {loading ? tt('settings.refreshing', 'Refreshing...') : tt('settings.refreshRates', 'Refresh Rates')}
                     </button>
                   </div>
                 </div>
 
                 <div className="md:col-span-2">
                   <label className={`mb-2 block text-xs font-semibold uppercase tracking-[0.18em] ${labelText}`}>
-                    Week Starts On
+                    {tt('settings.weekStart', 'Week Starts On')}
                   </label>
                   <select
                     className={`w-full rounded-2xl border px-4 py-3 outline-none ${inputClass}`}
                     value={settings.weekStartsOn}
                     onChange={(e) => update('weekStartsOn', e.target.value)}
                   >
-                    <option value="Sun">Sunday</option>
-                    <option value="Mon">Monday</option>
+                    <option value="Sun">{tt('settings.week.sun', 'Sunday')}</option>
+                    <option value="Mon">{tt('settings.week.mon', 'Monday')}</option>
                   </select>
                 </div>
               </div>
             </section>
 
-            <section className={`rounded-[28px] border p-8 ${cardClass}`}>
-              <h2 className={`text-[22px] font-bold ${isDark ? 'text-white' : 'text-[#11131b]'}`}>Security</h2>
+            <section className={`rounded-[24px] border p-6 ${cardClass}`}>
+              <h2 className={`text-[20px] font-bold ${isDark ? 'text-white' : 'text-[#11131b]'}`}>{tt('settings.security', 'Security')}</h2>
               <p className={`mt-2 text-sm ${mutedText}`}>
-                Update your password and manage account safety.
+                {tt('settings.securityDesc', 'Update your password and manage account safety.')}
               </p>
 
               <div className="mt-8 space-y-5">
                 <div>
                   <label className={`mb-2 block text-xs font-semibold uppercase tracking-[0.18em] ${labelText}`}>
-                    Current Password
+                    {tt('settings.pwd.current', 'Current Password')}
                   </label>
                   <input
                     type="password"
@@ -282,7 +292,7 @@ export default function Settings() {
                 </div>
                 <div>
                   <label className={`mb-2 block text-xs font-semibold uppercase tracking-[0.18em] ${labelText}`}>
-                    New Password
+                    {tt('settings.pwd.new', 'New Password')}
                   </label>
                   <input
                     type="password"
@@ -293,7 +303,7 @@ export default function Settings() {
                 </div>
                 <div>
                   <label className={`mb-2 block text-xs font-semibold uppercase tracking-[0.18em] ${labelText}`}>
-                    Confirm New Password
+                    {tt('settings.pwd.confirm', 'Confirm New Password')}
                   </label>
                   <input
                     type="password"
@@ -313,14 +323,14 @@ export default function Settings() {
                       : 'bg-[#d9ff34] text-black hover:bg-[#cbf029]'
                   }`}
                 >
-                  {changingPwd ? 'Updating...' : 'Change Password'}
+                  {changingPwd ? tt('settings.pwd.updating', 'Updating...') : tt('settings.pwd.change', 'Change Password')}
                 </button>
               </div>
 
               <div className={`mt-8 border-t pt-8 ${sectionDivider}`}>
-                <h3 className="text-lg font-bold text-[#fb7185]">Delete Account</h3>
+                <h3 className="text-lg font-bold text-[#fb7185]">{tt('settings.deleteTitle', 'Delete Account')}</h3>
                 <p className={`mt-2 text-sm ${labelText}`}>
-                  This action is irreversible. Type DELETE to confirm.
+                  {tt('settings.deleteDesc', 'This action is irreversible. Type DELETE to confirm.')}
                 </p>
                 <input
                   type="text"
@@ -343,7 +353,7 @@ export default function Settings() {
                       : 'bg-[#fb7185] text-white hover:bg-[#f43f5e]'
                   }`}
                 >
-                  {deleting ? 'Deleting...' : 'Delete Account'}
+                  {deleting ? tt('settings.deleting', 'Deleting...') : tt('settings.deleteAccount', 'Delete Account')}
                 </button>
               </div>
             </section>

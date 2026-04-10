@@ -7,8 +7,10 @@ const RecurringRuleSchema = new mongoose.Schema(
 
     // What to generate
     type: { type: String, enum: ['expense', 'income'], required: true },
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
     category: { type: String, required: true },
     source: { type: String, default: '' },
+    icon: { type: String, default: '' },
     amount: { type: Number, required: true },
 
     // NEW: support weekly / yearly (monthly kept as default for legacy docs)

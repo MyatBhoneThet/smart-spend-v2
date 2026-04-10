@@ -4,6 +4,7 @@ const Goal = require('../models/Goal');
 const Jar = require('../models/Jar');
 const { transfer } = require('../services/jarLedger');
 const { autoAllocate } = require('../services/goalAutoAllocator');
+const { buildUserQuery } = require('../utils/userQuery');
 
 // ——— helpers ———
 function userIdOf(req) {
@@ -44,7 +45,7 @@ async function withSession(res, next, handler) {
 // GET /api/v1/goals
 exports.listGoals = async (req, res, next) => {
   try {
-    const goals = await Goal.find({ userId: userIdOf(req) }).sort({ createdAt: -1 });
+    const goals = await Goal.find(buildUserQuery(userIdOf(req))).sort({ createdAt: -1 });
     res.json(goals);
   } catch (e) { next(e); }
 };
@@ -58,7 +59,7 @@ exports.createGoal = async (req, res, next) => {
     if (!title || !targetAmount || !targetDate || !jarId) {
       return res.status(400).json({ message: 'title, targetAmount, targetDate, jarId are required' });
     }
-    const jar = await Jar.findOne({ _id: jarId, userId });
+    const jar = await Jar.findOne({ _id: jarId, ...buildUserQuery(userId) });
     if (!jar) return res.status(400).json({ message: 'Jar not found' });
 
     const goal = await Goal.create({
@@ -84,7 +85,7 @@ exports.createGoal = async (req, res, next) => {
 exports.deleteGoal = async (req, res, next) => {
   try {
     const userId = userIdOf(req);
-    const goal = await Goal.findOne({ _id: req.params.id, userId });
+    const goal = await Goal.findOne({ _id: req.params.id, ...buildUserQuery(userId) });
     if (!goal) return res.status(404).json({ message: 'Goal not found' });
     await Goal.deleteOne({ _id: goal._id });
     res.json({ ok: true });
@@ -100,9 +101,9 @@ exports.fundGoal = async (req, res, next) => {
 
   return withSession(res, next, async (session) => {
     // load goal & jar
-    const goal = await Goal.findOne({ _id: req.params.id, userId }, null, { session });
+    const goal = await Goal.findOne({ _id: req.params.id, ...buildUserQuery(userId) }, null, { session });
     if (!goal) throw new Error('Goal not found');
-    const jar = await Jar.findOne({ _id: goal.jarId, userId }, null, { session });
+    const jar = await Jar.findOne({ _id: goal.jarId, ...buildUserQuery(userId) }, null, { session });
     if (!jar) throw new Error('Linked jar not found');
 
     // move free cash → goal's jar, and tie to goal so progress updates
@@ -117,7 +118,7 @@ exports.fundGoal = async (req, res, next) => {
     });
 
     // reload goal to include updated currentAmount/status
-    const updated = await Goal.findOne({ _id: goal._id, userId }, null, { session });
+    const updated = await Goal.findOne({ _id: goal._id, ...buildUserQuery(userId) }, null, { session });
 
     return {
       ok: true,

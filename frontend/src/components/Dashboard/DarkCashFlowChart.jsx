@@ -38,15 +38,15 @@ const DarkCashFlowChart = ({
   const chartData = Array.isArray(data) && data.length > 0 ? data : [];
   const cardClass = isDark
     ? 'bg-[#13141C] border-white/[0.03] shadow-[0_8px_30px_rgb(0,0,0,0.5)]'
-    : 'bg-[rgba(255,253,247,0.96)] border-black/8 shadow-[0_16px_40px_rgba(15,23,42,0.08)]';
+    : 'bg-white/18 border-white/22 shadow-[0_16px_40px_rgba(15,23,42,0.12)] ring-1 ring-white/30 backdrop-blur-3xl backdrop-saturate-150';
 
   return (
-    <div className={`h-[400px] w-full overflow-hidden rounded-[24px] border p-6 flex flex-col relative ${cardClass}`}>
-      <div className="flex justify-between items-center mb-6 z-10">
-        <h3 className={`text-[13px] font-black uppercase tracking-[0.1em] ${isDark ? 'text-gray-100' : 'text-[#11131b]'}`}>Cash Flow</h3>
-        <div className="flex gap-4 text-xs font-bold">
+    <div className={`h-[340px] w-full overflow-hidden rounded-[22px] border p-5 flex flex-col relative ${cardClass}`}>
+      <div className="flex justify-between items-center mb-4 z-10">
+        <h3 className={`text-[12px] font-black uppercase tracking-[0.1em] ${isDark ? 'text-gray-100' : 'text-[#11131b]'}`}>Cash Flow</h3>
+        <div className="flex gap-3 text-[11px] font-bold">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-[#a3e635] shadow-[0_0_8px_rgba(163,230,53,0.8)]" />
+            <div className={`w-2 h-2 rounded-full shadow-[0_0_8px_rgba(132,204,22,0.4)] ${isDark ? 'bg-[#a3e635]' : 'bg-[#84cc16]'}`} />
             <span className={`tracking-wider uppercase ${isDark ? 'text-gray-400' : 'text-[#6b7080]'}`}>Income</span>
           </div>
           <div className="flex items-center gap-2">
@@ -57,7 +57,7 @@ const DarkCashFlowChart = ({
       </div>
 
       {chartData.length === 0 ? (
-        <div className={`flex flex-1 items-center justify-center text-xs font-bold uppercase tracking-widest ${isDark ? 'text-gray-500' : 'text-[#6b7080]'}`}>
+        <div className={`flex flex-1 items-center justify-center text-[11px] font-bold uppercase tracking-widest ${isDark ? 'text-gray-500' : 'text-[#6b7080]'}`}>
           No transaction data
         </div>
       ) : (
@@ -66,8 +66,8 @@ const DarkCashFlowChart = ({
             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#a3e635" stopOpacity={0.4}/>
-                  <stop offset="95%" stopColor="#a3e635" stopOpacity={0}/>
+                  <stop offset="5%" stopColor={isDark ? "#a3e635" : "#84cc16"} stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor={isDark ? "#a3e635" : "#84cc16"} stopOpacity={0}/>
                 </linearGradient>
                 <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#fb7185" stopOpacity={0.4}/>
@@ -75,11 +75,11 @@ const DarkCashFlowChart = ({
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? 'rgba(255,255,255,0.05)' : 'rgba(17,19,27,0.10)'} />
-              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: isDark ? '#6b7280' : '#6b7080', fontSize: 10, fontWeight: 700 }} dy={10} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: isDark ? '#6b7280' : '#6b7080', fontSize: 10, fontWeight: 700 }} tickFormatter={yTickFormatter} />
+              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: isDark ? '#6b7280' : '#6b7080', fontSize: 9, fontWeight: 700 }} dy={8} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: isDark ? '#6b7280' : '#6b7080', fontSize: 9, fontWeight: 700 }} tickFormatter={yTickFormatter} />
               <Tooltip content={<CustomTooltip valueFormatter={valueFormatter} isDark={isDark} />} cursor={{ stroke: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(17,19,27,0.14)', strokeWidth: 1, strokeDasharray: '4 4' }} />
               <Area type="monotone" dataKey="expense" stroke="#fb7185" strokeWidth={3} fillOpacity={1} fill="url(#colorExpense)" activeDot={{ r: 6, fill: '#fb7185', stroke: '#fff', strokeWidth: 2 }} />
-              <Area type="monotone" dataKey="income" stroke="#a3e635" strokeWidth={3} fillOpacity={1} fill="url(#colorIncome)" activeDot={{ r: 6, fill: '#a3e635', stroke: '#fff', strokeWidth: 2 }} />
+              <Area type="monotone" dataKey="income" stroke={isDark ? "#a3e635" : "#84cc16"} strokeWidth={3} fillOpacity={1} fill="url(#colorIncome)" activeDot={{ r: 6, fill: isDark ? "#a3e635" : "#84cc16", stroke: '#fff', strokeWidth: 2 }} />
             </AreaChart>
           </ResponsiveContainer>
         </div>

@@ -2,6 +2,8 @@ const Income = require('../models/Income');
 const Category = require('../models/Category');
 const xlsx = require('xlsx');
 const { autoAllocate } = require('../services/goalAutoAllocator'); // ADDED
+const { buildUserQuery } = require('../utils/userQuery');
+const { loadIncomeHistory } = require('../utils/historyQueries');
 
 // Normalize "date" into a Date at UTC midnight
 function toUtcMidnight(v) {
@@ -79,7 +81,7 @@ exports.addIncome = async (req, res) => {
 exports.getAllIncome = async (req, res) => {
   const userId = req.user.id || req.user._id;
   try {
-    const incomes = await Income.find({ userId }).sort({ date: -1 });
+    const incomes = await loadIncomeHistory(userId);
     return res.json(incomes);
   } catch (error) {
     console.error('getAllIncome error:', error);
@@ -135,7 +137,7 @@ exports.bulkDeleteIncome = async (req, res) => {
         return res.status(400).json({ message: 'Invalid period. Use: all, last-month, last-6-months, or last-year' });
     }
 
-    const result = await Income.deleteMany({ userId, ...dateFilter });
+    const result = await Income.deleteMany({ ...buildUserQuery(userId), ...dateFilter });
 
     return res.json({ 
       message: `${result.deletedCount} income(s) deleted successfully`,
@@ -151,7 +153,7 @@ exports.bulkDeleteIncome = async (req, res) => {
 exports.downloadIncomeExcel = async (req, res) => {
   const userId = req.user.id || req.user._id;
   try {
-    const income = await Income.find({ userId }).sort({ date: -1 });
+    const income = await loadIncomeHistory(userId);
 
     const data = income.map((item) => ({
       Source: item.source || '',
@@ -202,7 +204,7 @@ exports.updateIncome = async (req, res) => {
     }
 
     const updated = await Income.findOneAndUpdate(
-      { _id: id, userId },
+      { _id: id, ...buildUserQuery(userId) },
       { $set: update },
       { new: true, runValidators: true }
     );

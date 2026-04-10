@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useContext } from "react";
+import { UserContext } from "../../context/UserContext";
 import { applyFilterSort } from "../../utils/filtering";
 import { LuFilter, LuSearch, LuX, LuRotateCcw } from "react-icons/lu";
 
@@ -10,6 +11,8 @@ export default function FilterControl({
   label = "Filter",
   theme = "default",
 }) {
+  const { prefs } = useContext(UserContext) || {};
+  const isDark = prefs?.theme === 'dark';
   const [open, setOpen] = useState(false);
   const [state, setState] = useState({
     q: "",
@@ -75,7 +78,9 @@ export default function FilterControl({
     ? "rounded-2xl border border-white/10 px-3 py-2 text-sm text-[#d0d3e4] hover:bg-white/[0.05]"
     : "rounded-xl border px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-white/5";
   const applyButtonClass = isNeon
-    ? "rounded-2xl bg-[#d9ff34] px-4 py-2 text-sm font-bold text-black hover:bg-[#cbf029]"
+    ? isDark 
+      ? "rounded-2xl bg-[#d9ff34] px-4 py-2 text-sm font-bold text-black hover:bg-[#cbf029]"
+      : "rounded-2xl bg-[#84cc16] px-4 py-2 text-sm font-bold text-white hover:bg-[#65a30d]"
     : "rounded-xl bg-emerald-600 px-3 py-2 text-sm text-white hover:bg-emerald-700";
   const activeSortButtonClass = isNeon ? "bg-white/[0.08] text-white" : "bg-black/5 dark:bg-white/10";
 

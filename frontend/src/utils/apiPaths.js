@@ -11,7 +11,7 @@ export const API_PATHS = {
     GET_USER_INFO: "/api/v1/auth/me",
   },
   DASHBOARD: {
-    GET_DATA: "/api/v1/dashboard",
+    GET_DATA: (period) => `/api/v1/dashboard${period ? `?period=${period}` : ''}`,
   },
   USER: {
     ME: "/api/v1/users/me",

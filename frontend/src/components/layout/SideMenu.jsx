@@ -15,15 +15,15 @@ export default function SideMenu() {
   const isDarkTheme = prefs?.theme === "dark";
   const containerClass = "flex min-h-full flex-col px-3 py-5 lg:px-4 lg:py-6";
   const itemBase =
-    "group flex w-full items-center gap-3 rounded-2xl transition-all duration-200";
+    "group flex w-full items-center gap-3 rounded-2xl transition-all duration-300 backdrop-blur-2xl";
   const itemActive =
-    isDarkTheme
-      ? "bg-[#d9ff34] text-black shadow-[0_0_18px_rgba(217,255,52,0.2)]"
-      : "bg-[#11131b] text-[#d9ff34] shadow-[0_10px_22px_rgba(15,23,42,0.08)]";
+      isDarkTheme
+      ? "bg-[#d9ff34] text-black shadow-[0_0_22px_rgba(217,255,52,0.22)]"
+      : "bg-white/18 text-[#11131b] shadow-[0_14px_36px_rgba(15,23,42,0.12)] ring-1 ring-white/24 backdrop-blur-3xl backdrop-saturate-150";
   const itemIdle =
-    isDarkTheme
-      ? "text-[#7b8095] hover:bg-white/[0.04] hover:text-white"
-      : "text-[#5f6476] hover:bg-black/[0.03] hover:text-[#11131b]";
+      isDarkTheme
+      ? "text-[#7b8095] hover:bg-white/[0.06] hover:text-white hover:ring-1 hover:ring-white/10"
+      : "text-[#5f6476] hover:bg-white/10 hover:text-[#11131b] hover:ring-1 hover:ring-white/18";
 
   const pathToI18nKey = (path) => {
     switch (path) {
@@ -87,21 +87,24 @@ export default function SideMenu() {
 
   return (
     <div className={containerClass}>
-      <div className="mb-6 flex items-center justify-center lg:justify-start">
-        <div className={`rounded-2xl px-3 py-2 text-2xl font-black tracking-tight ${isDarkTheme ? 'bg-white/[0.03] text-[#d9ff34]' : 'bg-white text-[#11131b] shadow-sm'}`}>
-          SS
+      <div className="mb-14 flex items-center justify-center lg:justify-center px-4">
+        <div className="flex items-center gap-3">
+          <div className={`h-10 w-1.5 rounded-full ${isDarkTheme ? 'bg-[#d9ff34] shadow-[0_0_20px_rgba(217,255,52,0.55)]' : 'bg-[#11131b] shadow-[0_0_16px_rgba(17,19,27,0.18)]'}`} />
+          <div className={`text-3xl font-black tracking-tighter ${isDarkTheme ? 'text-white' : 'text-[#11131b]'}`}>
+            Smart<span className={isDarkTheme ? 'text-[#d9ff34]' : 'text-[#84cc16]'}>Spend</span>
+          </div>
         </div>
       </div>
 
-      <div className="mb-8 hidden lg:flex flex-col items-start gap-4 px-2">
+      <div className="mb-8 hidden lg:flex flex-col items-center gap-4 px-2 text-center">
         {user ? (
           <>
-            <div className={`relative rounded-[28px] p-1 ${isDarkTheme ? 'border border-white/10 bg-white/[0.03]' : 'border border-black/5 bg-white shadow-sm'}`}>
+            <div className={`relative rounded-[28px] p-1 ${isDarkTheme ? 'border border-white/10 bg-white/[0.05] ring-1 ring-white/[0.06]' : 'border border-white/18 bg-white/16 ring-1 ring-white/24 backdrop-blur-3xl backdrop-saturate-150'}`}>
               {photoUrl ? (
                 <img
                   src={photoUrl}
                   alt="Profile"
-                  className="h-20 w-20 rounded-[24px] object-cover"
+                  className="h-20 w-20 rounded-[24px] object-cover shadow-lg"
                 />
               ) : (
                 <CharAvatar
@@ -117,7 +120,7 @@ export default function SideMenu() {
                 {user?.username || user?.fullName || ""}
               </h5>
               <p className={`mt-1 text-sm ${isDarkTheme ? 'text-[#7b8095]' : 'text-[#6b7280]'}`}>
-                {user?.email || "Smart Spend user"}
+                {user?.email || tt('profile.defaultUser', 'Smart Spend user')}
               </p>
             </div>
           </>
@@ -141,7 +144,7 @@ export default function SideMenu() {
                 onClick={handleLogout}
                 className={`${itemBase} ${itemIdle} mt-auto px-3 py-3 text-left lg:px-4`}
               >
-                <span className={`flex h-12 w-12 items-center justify-center rounded-2xl ${isDarkTheme ? 'border border-white/8 bg-white/[0.02]' : 'border border-black/5 bg-white'}`}>
+                <span className={`flex h-12 w-12 items-center justify-center rounded-2xl ${isDarkTheme ? 'border border-white/10 bg-white/[0.05] shadow-[0_10px_30px_rgba(0,0,0,0.12)]' : 'border border-white/18 bg-white/16 shadow-[0_12px_30px_rgba(15,23,42,0.10)] backdrop-blur-3xl backdrop-saturate-150'}`}>
                   <LuLogOut className="text-xl" />
                 </span>
                 <span className="hidden lg:block text-sm font-semibold">{labelText}</span>
@@ -163,7 +166,7 @@ export default function SideMenu() {
                 `${itemBase} ${isActive ? itemActive : itemIdle} px-3 py-3 lg:px-4`
               }
             >
-              <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${isDarkTheme ? 'border border-white/8 bg-white/[0.02]' : 'border border-black/5 bg-white'}`}>
+              <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${isDarkTheme ? 'border border-white/10 bg-white/[0.05] shadow-[0_10px_30px_rgba(0,0,0,0.12)]' : 'border border-white/18 bg-white/16 shadow-[0_12px_30px_rgba(15,23,42,0.10)] backdrop-blur-3xl backdrop-saturate-150'}`}>
                 {Icon ? <Icon className="text-xl" /> : null}
               </span>
               <span className="hidden lg:block text-sm font-semibold">{labelText}</span>

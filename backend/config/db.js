@@ -4,6 +4,11 @@ const connectDB = async () => {
     if (!process.env.MONGO_URI) {
         throw new Error('MONGO_URI is not configured');
     }
+    if (!/mongodb(?:\+srv)?:\/\/[^/]+\/[^/?]+/.test(process.env.MONGO_URI)) {
+        console.warn(
+            'MONGO_URI does not include a database name; MongoDB will default to the "test" database.'
+        );
+    }
     try {
         await mongoose.connect(process.env.MONGO_URI, {});
         console.log('MongoDB connected successfully');

@@ -50,7 +50,7 @@ export default function CategorySelect({
 
   // Tailwind utility sets for dark/light
   const inputBase = 'rounded-md border-2 text-sm px-3 py-2 w-full transition-colors duration-150 focus:outline-none';
-  const lightInput = 'bg-white/80 border-gray-200 text-gray-900 placeholder-gray-500 focus:border-emerald-500';
+  const lightInput = 'bg-white/58 border-white/45 text-gray-900 placeholder-gray-500 focus:border-emerald-500 backdrop-blur-3xl ring-1 ring-white/70';
   const darkInput  = 'bg-gray-900/60 border-gray-600 text-white placeholder-gray-400 focus:border-emerald-500';
 
   const selectCls = [

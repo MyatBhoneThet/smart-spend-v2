@@ -29,7 +29,7 @@ const NeonStatCard = ({ title, amount, subtitle, badgeText, colorTheme }) => {
   const theme = themes[colorTheme] || themes.purple;
   const cardClass = isDark
     ? 'bg-[#13141C] border-white/[0.03] shadow-[0_8px_30px_rgb(0,0,0,0.5)]'
-    : 'bg-[rgba(255,253,247,0.96)] border-black/8 shadow-[0_16px_40px_rgba(15,23,42,0.08)]';
+    : 'bg-white/18 border-white/22 shadow-[0_16px_40px_rgba(15,23,42,0.12)] ring-1 ring-white/30 backdrop-blur-3xl backdrop-saturate-150';
 
   return (
     <div className={`relative overflow-hidden rounded-[24px] border p-6 ${cardClass}`}>

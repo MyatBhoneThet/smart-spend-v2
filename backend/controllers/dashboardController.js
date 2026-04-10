@@ -1,78 +1,67 @@
-const Income = require("../models/Income");
-const Expense = require("../models/Expense");
 const Goal = require("../models/Goal");
 const RecurringRule = require("../models/RecurringRule");
+const { buildUserQuery } = require("../utils/userQuery");
+const {
+  loadIncomeHistory,
+  loadExpenseHistory,
+  groupExpensesByCategory,
+} = require("../utils/historyQueries");
 
-const { isValidObjectId, Types } = require("mongoose");
-
-exports.getDashboardData = async (req,res) => {
-    try{
+exports.getDashboardData = async (req, res) => {
+  try {
     const userId = req.user.id;
-    const userObjectId = new Types.ObjectId(String(userId));
+    const { period = 'M' } = req.query;
 
-    const start30DaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 *1000);
-    const start60DaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+    // Calculate time ranges
+    let days = 30;
+    if (period === 'W') days = 7;
+    else if (period === 'Q') days = 90;
+    else if (period === 'Y') days = 365;
+
+    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const prevStartDate = new Date(Date.now() - 2 * days * 24 * 60 * 60 * 1000);
+    const since60Days = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
 
     const [
-        totalIncome,
-        totalExpense,
-        last60DaysIncomeTransactions,
-        last30DaysExpenseTransactions,
-        recentIncomeTransactions,
-        recentExpenseTransactions,
-        goals,
-        recurringRules,
-        expenseByCategory,
+      incomeHistory,
+      expenseHistory,
+      goals,
+      recurringRules,
     ] = await Promise.all([
-        Income.aggregate([
-            { $match: {userId: userObjectId } },
-            { $group: { _id:null, total: {$sum: "$amount" } } },
-        ]),
-        Expense.aggregate([
-            { $match: {userId: userObjectId } },
-            { $group: { _id:null, total: {$sum: "$amount" } } },
-        ]),
-        Income.find({
-            userId,
-            date: { $gte: start60DaysAgo },
-        }).sort({ date: -1 }),
-        Expense.find({
-            userId,
-            date: { $gte: start30DaysAgo },
-        }).sort({ date: -1 }),
-        Income.find({ userId }).sort({ date: - 1}).limit(5),
-        Expense.find({userId}).sort({date: -1}).limit(5),
-        Goal.find({ userId }).sort({ createdAt: -1 }).lean(),
-        RecurringRule.find({ userId }).sort({ createdAt: -1 }).lean(),
-        Expense.aggregate([
-            { $match: { userId: userObjectId } },
-            { $group: { _id: { $ifNull: ["$categoryName", "$category", "Uncategorized"] }, total: { $sum: "$amount" } } },
-            { $sort: { total: -1 } },
-        ]),
+      loadIncomeHistory(userId),
+      loadExpenseHistory(userId),
+      Goal.find(buildUserQuery(userId)).sort({ createdAt: -1 }).lean(),
+      RecurringRule.find(buildUserQuery(userId)).sort({ createdAt: -1 }).lean(),
     ]);
-    console.log("totalIncome", {totalIncome, userId: isValidObjectId(userId)});
 
-    const incomeLast60days = last60DaysIncomeTransactions.reduce(
-        (sum, transaction) => sum + (transaction.amount || 0),
-        0
-    );
+    const within = (row, since, until) => {
+      const d = new Date(row.date || row.createdAt);
+      if (Number.isNaN(d.getTime())) return false;
+      if (since && d < since) return false;
+      if (until && d > until) return false;
+      return true;
+    };
 
-    const expensesLast30days = last30DaysExpenseTransactions.reduce(
-        (sum, transaction) => sum + (transaction.amount || 0),
-        0
-    );
+    const periodIncomeTransactions = incomeHistory.filter((row) => within(row, startDate));
+    const periodExpenseTransactions = expenseHistory.filter((row) => within(row, startDate));
+    const prevPeriodIncomeTransactions = incomeHistory.filter((row) => within(row, prevStartDate, startDate));
+    const prevPeriodExpenseTransactions = expenseHistory.filter((row) => within(row, prevStartDate, startDate));
+    const last60DaysIncomeTransactions = incomeHistory.filter((row) => within(row, since60Days));
+    const last60DaysExpenseTransactions = expenseHistory.filter((row) => within(row, since60Days));
+    const recentIncomeTransactions = [...incomeHistory].sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt)).slice(0, 5);
+    const recentExpenseTransactions = [...expenseHistory].sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt)).slice(0, 5);
 
-    // fetch lst5 transactions(income + expenses)
-    const lastTransactions = [
-        ...recentIncomeTransactions.map((txn) => ({
-            ...txn.toObject(),
-            type: "income",
-        })),
-        ...recentExpenseTransactions.map((txn) => ({
-            ...txn.toObject(),
-            type: "expense",
-        })),
-    ].sort((a,b) => b.date - a.date); //sort lastest first
+    const totalAllTimeIncome = incomeHistory.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const totalAllTimeExpense = expenseHistory.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const periodIncomeTotal = periodIncomeTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const periodExpenseTotal = periodExpenseTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const prevPeriodIncomeTotal = prevPeriodIncomeTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const prevPeriodExpenseTotal = prevPeriodExpenseTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const expenseByCategory = groupExpensesByCategory(periodExpenseTransactions);
+
+    // fetch latest transactions (income + expenses)
+    const lastTransactions = [...recentIncomeTransactions, ...recentExpenseTransactions]
+        .sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
 
     const goalItems = goals.map((goal) => {
         const targetAmount = Number(goal.targetAmount || 0);
@@ -106,41 +95,45 @@ exports.getDashboardData = async (req,res) => {
         .filter((rule) => rule.isActive)
         .reduce((sum, rule) => sum + rule.amount, 0);
 
-    const grandTotal = expenseByCategory.reduce((sum, c) => sum + c.total, 0);
-    const spendingByCategory = expenseByCategory.map((c) => ({
-        name: c._id || "Uncategorized",
-        value: grandTotal > 0 ? Math.round((c.total / grandTotal) * 100) : 0,
-        total: c.total,
-    })).filter((c) => c.value > 0);
-
     res.json({
-        totalBalance:
-            (totalIncome[0]?.total || 0) - (totalExpense[0]?.total || 0),
-        totalIncome: totalIncome[0]?.total || 0,
-        totalExpenses: totalExpense[0]?.total || 0,
-        last30DaysExpenses: {
-            total: expensesLast30days,
-            transactions: last30DaysExpenseTransactions,
+      totalBalance: totalAllTimeIncome - totalAllTimeExpense,
+      totalIncome: periodIncomeTotal,
+      totalExpenses: periodExpenseTotal,
+      prevPeriodIncome: prevPeriodIncomeTotal,
+      prevPeriodExpenses: prevPeriodExpenseTotal,
+      last60DaysIncome: {
+        total: last60DaysIncomeTransactions.reduce((sum, t) => sum + (t.amount || 0), 0),
+        transactions: last60DaysIncomeTransactions,
+      },
+      last60DaysExpense: {
+        total: last60DaysExpenseTransactions.reduce((sum, t) => sum + (t.amount || 0), 0),
+        transactions: last60DaysExpenseTransactions,
+      },
+      periodData: {
+        income: {
+          total: periodIncomeTotal,
+          transactions: periodIncomeTransactions,
         },
-        last60DaysIncome: {
-            total: incomeLast60days,
-            transactions: last60DaysIncomeTransactions,
+        expense: {
+          total: periodExpenseTotal,
+          transactions: periodExpenseTransactions,
         },
-        recentTransactions: lastTransactions,
-        goals: {
-            total: goalItems.length,
-            active: activeGoalsCount,
-            totalTargetAmount: goalsTotalTargetAmount,
-            totalCurrentAmount: goalsTotalCurrentAmount,
-            items: goalItems,
-        },
-        recurring: {
-            total: recurringItems.length,
-            active: activeRecurringCount,
-            monthlyTotal: recurringMonthlyTotal,
-            items: recurringItems,
-        },
-        spendingByCategory,
+      },
+      recentTransactions: lastTransactions,
+      goals: {
+        total: goalItems.length,
+        active: activeGoalsCount,
+        totalTargetAmount: goalsTotalTargetAmount,
+        totalCurrentAmount: goalsTotalCurrentAmount,
+        items: goalItems,
+      },
+      recurring: {
+        total: recurringItems.length,
+        active: activeRecurringCount,
+        monthlyTotal: recurringMonthlyTotal,
+        items: recurringItems,
+      },
+      spendingByCategory: expenseByCategory,
     });
     } catch (error){
         res.status(500).json({ message: "Server Error", error});

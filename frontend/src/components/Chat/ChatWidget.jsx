@@ -178,13 +178,13 @@ export default function ChatWidget({ side = 'left' }) {
     : 'bg-[#fffdf7] border-black/8 text-gray-900 shadow-[0_18px_60px_rgba(15,23,42,0.08)]';
   const launcherClass = isDark
     ? 'bg-[#d9ff34] text-black shadow-[0_0_24px_rgba(217,255,52,0.28)] hover:bg-[#c8ef1b]'
-    : 'bg-[#11131b] text-[#d9ff34] shadow-[0_10px_30px_rgba(15,23,42,0.15)] hover:bg-[#1f2937]';
+    : 'bg-[#11131b] text-[#84cc16] shadow-[0_10px_30px_rgba(15,23,42,0.15)] hover:bg-[#1f2937]';
   const assistantBubble = isDark
     ? 'border border-white/10 bg-white/[0.03] text-white'
     : 'border border-black/8 bg-white text-gray-800';
   const userBubble = isDark
     ? 'bg-[#d9ff34] text-black'
-    : 'bg-[#d9ff34] text-black';
+    : 'bg-[#84cc16] text-white';
 
   const muted = isDark ? 'text-[#7b8095]' : 'text-gray-500';
 
@@ -212,7 +212,7 @@ export default function ChatWidget({ side = 'left' }) {
           <div className={`flex items-center justify-between border-b px-5 py-4 ${isDark ? 'border-white/10' : 'border-black/8'}`}>
             <div>
               <div className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.22em] ${isDark ? 'text-[#7b8095]' : 'text-[#6b7080]'}`}>
-                <LuSparkles className="text-[#d9ff34]" />
+                <LuSparkles className={isDark ? "text-[#d9ff34]" : "text-[#84cc16]"} />
                 Smart Spend
               </div>
               <div className={`mt-1 text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>Financial assistant</div>
@@ -236,7 +236,7 @@ export default function ChatWidget({ side = 'left' }) {
                     range === r
                       ? isDark
                         ? 'border-[#d9ff34]/20 bg-[#d9ff34]/10 text-[#d9ff34]'
-                        : 'border-[#11131b]/10 bg-[#11131b] text-[#d9ff34]'
+                        : 'border-[#11131b]/10 bg-[#11131b] text-[#84cc16]'
                       : isDark
                       ? 'border-white/10 bg-white/[0.03] text-[#d0d3e4] hover:bg-white/[0.05]'
                       : 'border-black/8 bg-white text-gray-700 hover:bg-black/[0.03]'
@@ -309,7 +309,7 @@ export default function ChatWidget({ side = 'left' }) {
               <button
                 type="submit"
                 disabled={loading || !text.trim()}
-                className="grid h-10 w-10 place-items-center rounded-xl bg-[#d9ff34] text-black disabled:opacity-40"
+                className={`grid h-10 w-10 place-items-center rounded-xl transition-all disabled:opacity-40 ${isDark ? 'bg-[#d9ff34] text-black' : 'bg-[#11131b] text-[#84cc16]'}`}
                 aria-label="Send"
               >
                 <LuSend />

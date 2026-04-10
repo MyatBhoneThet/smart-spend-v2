@@ -19,8 +19,8 @@ export default function DashboardLayout({ children, activeMenu }) {
 
   const sideBg =
     appTheme === "dark"
-      ? "bg-[#0f1119] border-white/8"
-      : "bg-[#f8f5ec] border-black/5 shadow-[4px_0_24px_rgba(15,23,42,0.06)]";
+      ? "bg-white/[0.05] border-white/10 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-2xl"
+      : "bg-white/14 border-white/18 shadow-[0_24px_80px_rgba(15,23,42,0.10)] backdrop-blur-3xl backdrop-saturate-150";
 
   // Get current path
   const location = useLocation();
@@ -68,7 +68,7 @@ export default function DashboardLayout({ children, activeMenu }) {
       {/* Top bar (mobile only) */}
       <div
         className={`md:hidden flex items-center justify-between px-4 py-3 border-b backdrop-blur-md ${
-          appTheme === "dark" ? "border-white/10 bg-black/40" : "border-gray-200/50 bg-white/60"
+          appTheme === "dark" ? "border-white/10 bg-white/[0.05]" : "border-white/18 bg-white/14 backdrop-saturate-150"
         }`}
       >
         <button
@@ -120,9 +120,12 @@ export default function DashboardLayout({ children, activeMenu }) {
           style={{ height: "100vh" }}
         >
           {/* subtle background flare for aesthetic */}
-          <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] blur-[120px] rounded-full pointer-events-none -z-10 ${
-            appTheme === "dark" ? "bg-green-500/10" : "bg-lime-200/60"
-          }`}></div>
+          <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[460px] blur-[140px] rounded-full pointer-events-none -z-10 ${
+            appTheme === "dark" ? "bg-[#d9ff34]/10" : "bg-[#a3e635]/30"
+          }`} />
+          <div className={`absolute bottom-0 right-0 w-[560px] h-[360px] blur-[140px] rounded-full pointer-events-none -z-10 ${
+            appTheme === "dark" ? "bg-[#47d7ff]/8" : "bg-[#fb7185]/10"
+          }`} />
           {children ?? <Outlet />}
         </main>
       </div>

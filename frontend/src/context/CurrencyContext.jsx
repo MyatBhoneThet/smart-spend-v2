@@ -2,12 +2,13 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { UserContext } from "./UserContext";
 
-/** All values in DB are THB. We only convert for display / input. */
+// All values in DB are THB. We only convert for display / input
 const CurrencyContext = createContext(null);
 
 const STORAGE_KEY = "fxRates_THB_cache_v2";
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const FX_URL = "https://open.er-api.com/v6/latest/THB";
+const ZERO_DECIMAL_CURRENCIES = new Set(["MMK", "JPY", "KRW", "VND"]);
 
 const normalizeLang = (v) => {
   const s = String(v || "en").toLowerCase();
@@ -22,10 +23,16 @@ function numberFormat(amount, currency, lang = "en") {
   if (currency === "THB") return `฿${n.toLocaleString(lang)}`;
 
   try {
-    return new Intl.NumberFormat(lang, { style: "currency", currency }).format(n);
+    return new Intl.NumberFormat(lang, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: ZERO_DECIMAL_CURRENCIES.has(currency) ? 0 : 2,
+      maximumFractionDigits: ZERO_DECIMAL_CURRENCIES.has(currency) ? 0 : 2,
+    }).format(n);
   } catch {
-    const symbols = { USD: "$", MMK: "MMK " };
-    return `${symbols[currency] || ""}${n.toLocaleString(lang)}`;
+    const symbols = { USD: "$", MMK: "Ks ", JPY: "¥", KRW: "₩", VND: "₫" };
+    const value = ZERO_DECIMAL_CURRENCIES.has(currency) ? Math.round(n) : n;
+    return `${symbols[currency] || ""}${value.toLocaleString(lang)}`;
   }
 }
 
@@ -80,7 +87,7 @@ export const CurrencyProvider = ({ children }) => {
     }
   };
 
-  /** Convert THB -> selected/display currency */
+  // Convert THB -> selected/display currency
   const convert = (amountTHB, to = targetCurrency) => {
     const n = Number(amountTHB) || 0;
     if (!to || to === "THB") return n;
@@ -89,7 +96,7 @@ export const CurrencyProvider = ({ children }) => {
     return n * rate;
   };
 
-  /** Convert from selected/display currency -> THB (for saving in DB) */
+  // Convert from selected/display currency -> THB (for saving in DB)
   const toBase = (amountInDisplay, from = targetCurrency) => {
     const n = Number(amountInDisplay) || 0;
     if (!from || from === "THB") return n;
@@ -98,9 +105,9 @@ export const CurrencyProvider = ({ children }) => {
     return n / rate;
   };
 
-  /** Get a short symbol for UI inputs */
+// Get a short symbol for UI inputs
   const symbol = (c = targetCurrency) => {
-    const map = { THB: "฿", USD: "$", MMK: "MMK" };
+    const map = { THB: "฿", USD: "$", MMK: "Ks", JPY: "¥", KRW: "₩", VND: "₫" };
     return map[String(c).toUpperCase()] || c;
   };
 
@@ -116,8 +123,8 @@ export const CurrencyProvider = ({ children }) => {
       targetCurrency,
       language,
       refreshRates,
-      convert,     // THB -> display
-      toBase,      // display -> THB ✅ for forms
+      convert,
+      toBase,
       format,
       symbol,
     }),

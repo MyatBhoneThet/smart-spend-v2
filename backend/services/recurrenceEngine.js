@@ -58,14 +58,18 @@ function nextAfter(rule, localMid) {
 /* ============== core generator ============== */
 async function ensureTransaction(rule, whenLocalMidnight) {
   const offset = rule.tzOffsetMinutes ?? 420;
+  const source = String(rule.source || rule.category || '').trim() || (rule.type === 'income' ? 'Recurring Income' : 'Recurring Expense');
 
   // Convert to UTC (this is what we save as the transaction's date)
   const dateUTC = toUTC(whenLocalMidnight, offset);
 
   const base = {
     userId: rule.userId,
+    categoryId: rule.categoryId,
     category: rule.category,
-    source: rule.source || '',
+    categoryName: rule.category,
+    source,
+    icon: rule.icon || '',
     amount: Number(rule.amount),
     date: dateUTC, // normalized UTC midnight for that local day
     notes: (rule.notes ? `${rule.notes} ` : '') + '[Recurring]',
@@ -77,7 +81,7 @@ async function ensureTransaction(rule, whenLocalMidnight) {
   const exists = await Model.findOne({
     userId: rule.userId,
     category: rule.category,
-    source: rule.source || '',
+    source,
     amount: Number(rule.amount),
     date: dateUTC,
   }).lean();

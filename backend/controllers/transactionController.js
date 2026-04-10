@@ -3,6 +3,7 @@ const Transaction = require('../models/Transaction');
 const mongoose = require('mongoose');
 const Income = require('../models/Income');
 const Expense = require('../models/Expense');
+const { buildUserQuery } = require('../utils/userQuery');
 
 
 exports.createTransaction = async (req, res) => {
@@ -17,7 +18,7 @@ exports.createTransaction = async (req, res) => {
 exports.listTransactions = async (req, res) => {
   const userId = req.user._id;
   const { type, from, to } = req.query;
-  const q = { userId };
+  const q = buildUserQuery(userId);
   if (type) q.type = type;
   if (from || to) {
     q.date = {};
@@ -30,7 +31,7 @@ exports.listTransactions = async (req, res) => {
 
 exports.getTransaction = async (req, res) => {
   const userId = req.user._id;
-  const row = await Transaction.findOne({ _id: req.params.id, userId });
+  const row = await Transaction.findOne({ _id: req.params.id, ...buildUserQuery(userId) });
   if (!row) return res.status(404).json({ message: 'Not found' });
   res.json(row);
 };
@@ -38,7 +39,7 @@ exports.getTransaction = async (req, res) => {
 exports.updateTransaction = async (req, res) => {
   try {
     const userId = req.user._id;
-    const row = await Transaction.findOneAndUpdate({ _id: req.params.id, userId }, req.body, { new: true });
+    const row = await Transaction.findOneAndUpdate({ _id: req.params.id, ...buildUserQuery(userId) }, req.body, { new: true });
     if (!row) return res.status(404).json({ message: 'Not found' });
     res.json(row);
   } catch (e) {
@@ -48,7 +49,7 @@ exports.updateTransaction = async (req, res) => {
 
 exports.deleteTransaction = async (req, res) => {
   const userId = req.user._id;
-  await Transaction.deleteOne({ _id: req.params.id, userId });
+  await Transaction.deleteOne({ _id: req.params.id, ...buildUserQuery(userId) });
   res.json({ ok: true });
 };
 
@@ -82,7 +83,7 @@ exports.sumBy = async (req, res) => {
 
     // Prefer business `date`, fall back to `createdAt` so older docs still count
     const pipeline = [
-      { $match: { userId: new mongoose.Types.ObjectId(uid) } },
+      { $match: buildUserQuery(uid) },
       {
         $addFields: {
           _usedDate: { $ifNull: ['$date', '$createdAt'] },

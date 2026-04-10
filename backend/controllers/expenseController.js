@@ -1,6 +1,8 @@
 const Expense = require('../models/Expense');
 const Category = require('../models/Category');
 const xlsx = require('xlsx');
+const { buildUserQuery } = require('../utils/userQuery');
+const { loadExpenseHistory } = require('../utils/historyQueries');
 
 // Normalize "date" from "YYYY-MM-DD" or ISO into a Date at UTC midnight
 function toUtcMidnight(v) {
@@ -68,7 +70,7 @@ exports.addExpense = async (req, res) => {
 exports.getAllExpense = async (req, res) => {
   const userId = req.user.id || req.user._id;
   try {
-    const expense = await Expense.find({ userId }).sort({ date: -1 });
+    const expense = await loadExpenseHistory(userId);
     return res.json(expense);
   } catch (error) {
     console.error('getAllExpense error:', error);
@@ -123,7 +125,7 @@ exports.bulkDeleteExpense = async (req, res) => {
         return res.status(400).json({ message: 'Invalid period. Use: all, last-month, last-6-months, or last-year' });
     }
 
-    const result = await Expense.deleteMany({ userId, ...dateFilter });
+    const result = await Expense.deleteMany({ ...buildUserQuery(userId), ...dateFilter });
 
     return res.json({ 
       message: `${result.deletedCount} expense(s) deleted successfully`,
@@ -139,7 +141,7 @@ exports.bulkDeleteExpense = async (req, res) => {
 exports.downloadExpenseExcel = async (req, res) => {
   const userId = req.user.id || req.user._id;
   try {
-    const expense = await Expense.find({ userId }).sort({ date: -1 });
+    const expense = await loadExpenseHistory(userId);
 
     const data = expense.map((item) => ({
       Source: item.source || '',
@@ -190,7 +192,7 @@ exports.updateExpense = async (req, res) => {
     }
 
     const updated = await Expense.findOneAndUpdate(
-      { _id: id, userId },
+      { _id: id, ...buildUserQuery(userId) },
       { $set: update },
       { new: true, runValidators: true }
     );

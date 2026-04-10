@@ -33,13 +33,19 @@ Create `backend/.env` (example):
 
 ```env
 PORT=8000
-MONGO_URI=your_mongodb_connection_string
+MONGO_URI=your_mongodb_connection_string_with_a_database_name
 JWT_SECRET=your_jwt_secret
 OPENAI_API_KEY=your_openai_key
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GITHUB_CLIENT_ID=your_github_client_id
 GITHUB_CLIENT_SECRET=your_github_client_secret
+```
+
+Make sure the Mongo URI includes a database name, for example:
+
+```env
+MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/smartspend?retryWrites=true&w=majority
 ```
 
 Run backend:

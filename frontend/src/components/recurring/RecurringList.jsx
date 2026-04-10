@@ -141,6 +141,9 @@ export default function RecurringList() {
                   {/* Content Section */}
                   <div className="min-w-0 flex-1">
                     <div className="font-medium">
+                      <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full border text-sm">
+                        {rule.icon || (rule.type === 'income' ? '💰' : '💸')}
+                      </span>
                       {rule.type === 'income' ? tt('recurring.income', 'Income') : tt('recurring.expense', 'Expense')}
                       {' — '}{rule.category}
                       {/* NEW: frequency pill */}

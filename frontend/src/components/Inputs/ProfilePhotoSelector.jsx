@@ -51,8 +51,10 @@ const ProfilePhotoSelector = ({ photo, onUpload, onRemove }) => {
     <div className="flex flex-col items-center space-y-4">
       <div className="relative group">
         <div
-          className={`w-32 h-32 rounded-full border-4 overflow-hidden flex items-center justify-center shadow-lg ${
-            isDarkTheme ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-gray-50"
+          className={`w-32 h-32 rounded-full border overflow-hidden flex items-center justify-center shadow-[0_20px_60px_rgba(15,23,42,0.16)] backdrop-blur-2xl ${
+            isDarkTheme
+              ? "border-white/10 bg-white/[0.06] text-white"
+              : "border-white/45 bg-white/58 text-[#11131b] ring-1 ring-white/70 backdrop-blur-3xl"
           }`}
         >
           {preview ? (
@@ -82,7 +84,7 @@ const ProfilePhotoSelector = ({ photo, onUpload, onRemove }) => {
         </div>
 
         {isUploading && (
-          <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+        <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/40 backdrop-blur-sm">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
           </div>
         )}
@@ -98,15 +100,14 @@ const ProfilePhotoSelector = ({ photo, onUpload, onRemove }) => {
       />
 
       <div className="flex flex-col sm:flex-row gap-3">
-        {/* Changed to GREEN primary (no structural changes) */}
         <button
           type="button"
           onClick={triggerFileSelect}
           disabled={isUploading}
-          className={`inline-flex items-center justify-center px-4 py-2.5 font-medium rounded-lg transition-colors duration-200 ${
+          className={`inline-flex items-center justify-center rounded-2xl px-4 py-2.5 font-medium transition-all duration-200 shadow-[0_14px_36px_rgba(15,23,42,0.08)] backdrop-blur-2xl ${
             isDarkTheme
-              ? `bg-primary hover:bg-primary-700 disabled:bg-primary-400 text-white`
-              : `bg-primary hover:bg-primary-700 disabled:bg-primary-400 text-white`
+              ? 'bg-[#d9ff34] hover:bg-[#cbf029] disabled:bg-[#d9ff34]/40 text-black'
+              : 'bg-[#84cc16] hover:bg-[#65a30d] disabled:bg-[#84cc16]/40 text-white'
           }`}
         >
           {isUploading
@@ -120,10 +121,10 @@ const ProfilePhotoSelector = ({ photo, onUpload, onRemove }) => {
           <button
             type="button"
             onClick={handleRemove}
-            className={`inline-flex items-center justify-center px-4 py-2.5 font-medium rounded-lg transition-colors duration-200 ${
+            className={`inline-flex items-center justify-center rounded-2xl px-4 py-2.5 font-medium transition-all duration-200 shadow-[0_14px_36px_rgba(15,23,42,0.06)] backdrop-blur-2xl ${
               isDarkTheme
-                ? "bg-red-700 hover:bg-red-600 text-white"
-                : "bg-white hover:bg-red-50 border border-red-300 text-red-700 hover:text-red-800"
+                ? "bg-white/[0.05] hover:bg-white/[0.08] text-[#d0d3e4] border border-white/10"
+                : "bg-white/60 hover:bg-white/75 text-[#31374a] border border-white/45 backdrop-blur-3xl"
             }`}
           >
             {tt("profile.removePhoto", "Remove Photo")}

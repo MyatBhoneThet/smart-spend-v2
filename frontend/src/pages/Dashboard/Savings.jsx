@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { LuCalendarDays, LuPlus, LuTrash2 } from 'react-icons/lu';
-import DashboardLayout from '../../components/layouts/DashboardLayout';
+import { LuArrowDown, LuArrowUp, LuCalendarDays, LuPlus, LuTrash2, LuWallet } from 'react-icons/lu';
+import DashboardLayout from '../../components/layout/DashboardLayout';
 import axiosInstance from '../../utils/axiosInstance';
 import { API_PATHS } from '../../utils/apiPaths';
 import { useCurrency } from '../../context/CurrencyContext';
@@ -28,6 +28,9 @@ export default function SavingsPage() {
 
   const [goals, setGoals] = useState([]);
   const [jars, setJars] = useState([]);
+  const [newJarName, setNewJarName] = useState('');
+  const [creatingJar, setCreatingJar] = useState(false);
+  const [jarAmounts, setJarAmounts] = useState({});
   const [title, setTitle] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [targetDate, setTargetDate] = useState('');
@@ -51,6 +54,67 @@ export default function SavingsPage() {
       if (!jarId && jarList[0]) setJarId(jarList[0]._id);
     } catch (e) {
       toast.error(e?.response?.data?.message || e.message || 'Failed to load goals/jars');
+    }
+  };
+
+  const createJar = async (e) => {
+    e.preventDefault();
+    if (!newJarName.trim()) return;
+    try {
+      setCreatingJar(true);
+      await axiosInstance.post(API_PATHS.JARS.BASE, { name: newJarName.trim() });
+      setNewJarName('');
+      toast.success('Jar created');
+      await load();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err.message || 'Failed to create jar');
+    } finally {
+      setCreatingJar(false);
+    }
+  };
+
+  const changeJarAmount = (id, value) => {
+    setJarAmounts((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const fundJar = async (id) => {
+    const amount = Number(jarAmounts[id] || 0);
+    if (!(amount > 0)) return;
+    try {
+      await axiosInstance.post(API_PATHS.JARS.FUND(id), { amount });
+      changeJarAmount(id, '');
+      toast.success('Jar funded');
+      await load();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err.message || 'Fund failed');
+    }
+  };
+
+  const withdrawJar = async (id) => {
+    const amount = Number(jarAmounts[id] || 0);
+    if (!(amount > 0)) return;
+    try {
+      await axiosInstance.post(API_PATHS.JARS.WITHDRAW(id), { amount });
+      changeJarAmount(id, '');
+      toast.success('Jar withdrawn');
+      await load();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err.message || 'Withdraw failed');
+    }
+  };
+
+  const removeJar = async (id, balance) => {
+    if (balance > 0) {
+      toast.error('You can only delete an empty jar. Withdraw to 0 first.');
+      return;
+    }
+    if (!window.confirm('Delete this jar? This cannot be undone.')) return;
+    try {
+      await axiosInstance.delete(`${API_PATHS.JARS.BASE}/${id}`);
+      toast.success('Jar deleted');
+      await load();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err.message || 'Delete failed');
     }
   };
 
@@ -86,21 +150,24 @@ export default function SavingsPage() {
   const nearestDeadline = activeGoals
     .filter((goal) => goal.targetDate)
     .sort((a, b) => new Date(a.targetDate) - new Date(b.targetDate))[0];
+  const pageClass = isDark
+    ? 'bg-[radial-gradient(circle_at_top_left,rgba(217,255,52,0.11),transparent_26%),radial-gradient(circle_at_top_right,rgba(71,215,255,0.08),transparent_22%),linear-gradient(180deg,#090b11_0%,#05070b_100%)] text-white'
+    : 'bg-[radial-gradient(circle_at_top_left,rgba(217,255,52,0.14),transparent_24%),radial-gradient(circle_at_top_right,rgba(255,255,255,0.72),transparent_20%),linear-gradient(180deg,#fefbf8_0%,#f7f3ea_100%)] text-[#11131b]';
   const cardClass = isDark
-    ? 'border-white/8 bg-[#11131b] text-white shadow-[0_8px_30px_rgba(0,0,0,0.45)]'
-    : 'border-black/8 bg-[rgba(255,253,247,0.96)] text-[#11131b] shadow-[0_16px_40px_rgba(15,23,42,0.08)]';
-  const sectionDivider = isDark ? 'border-white/8' : 'border-black/8';
-  const mutedText = isDark ? 'text-[#6c7086]' : 'text-[#6b6f80]';
-  const labelText = isDark ? 'text-[#7b8095]' : 'text-[#6b7080]';
+    ? 'border-white/10 bg-white/[0.05] text-white shadow-[0_24px_90px_rgba(0,0,0,0.35)] ring-1 ring-white/[0.08] backdrop-blur-2xl'
+    : 'border-white/28 bg-white/28 text-[#11131b] shadow-[0_24px_90px_rgba(15,23,42,0.08)] ring-1 ring-white/45 backdrop-blur-3xl';
+  const sectionDivider = isDark ? 'border-white/10' : 'border-white/45';
+  const mutedText = isDark ? 'text-[#7b8095]' : 'text-[#6b6f80]';
+  const labelText = isDark ? 'text-[#8a90a7]' : 'text-[#6b7080]';
   const inputClass = isDark
-    ? 'border-white/10 bg-white/[0.03] text-white'
-    : 'border-black/10 bg-white text-[#11131b]';
+    ? 'border-white/10 bg-white/[0.05] text-white placeholder:text-[#848aa0]'
+    : 'border-white/28 bg-white/28 text-[#11131b] placeholder:text-[#8a8f9f] backdrop-blur-3xl';
   const subtleSurface = isDark
-    ? 'border-white/10 bg-white/[0.03]'
-    : 'border-black/10 bg-[rgba(17,19,27,0.03)]';
+    ? 'border-white/10 bg-white/[0.05]'
+    : 'border-white/28 bg-white/22 backdrop-blur-3xl';
   const outlineButton = isDark
-    ? 'border-white/10 text-[#d0d3e4] hover:bg-white/[0.05]'
-    : 'border-black/10 text-[#31374a] hover:bg-black/[0.04]';
+    ? 'border-white/10 text-[#d0d3e4] hover:bg-white/[0.08] backdrop-blur-2xl'
+    : 'border-white/28 text-[#31374a] hover:bg-white/42 backdrop-blur-3xl';
 
   const createGoal = async (e) => {
     e.preventDefault();
@@ -155,50 +222,57 @@ export default function SavingsPage() {
 
   return (
     <DashboardLayout activeMenu="Savings">
-      <div className={`absolute inset-0 overflow-y-auto ${isDark ? 'bg-[#090b11] text-white' : 'bg-[#f6f1e8] text-[#11131b]'}`}>
-        <div className="mx-auto max-w-[1600px] p-4 pt-6 md:p-8 md:pt-10">
-          <div className={`mb-8 flex flex-col gap-5 border-b pb-6 md:flex-row md:items-start md:justify-between ${sectionDivider}`}>
+      <div className={`absolute inset-0 overflow-y-auto overflow-x-hidden ${pageClass}`}>
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className={`absolute -left-20 top-20 h-80 w-80 rounded-full blur-3xl ${isDark ? 'bg-[#d9ff34]/10' : 'bg-[#d9ff34]/18'}`} />
+          <div className={`absolute right-6 top-40 h-96 w-96 rounded-full blur-3xl ${isDark ? 'bg-[#fb7185]/8' : 'bg-[#fb7185]/10'}`} />
+          <div className={`absolute bottom-0 left-1/3 h-[26rem] w-[26rem] rounded-full blur-3xl ${isDark ? 'bg-[#47d7ff]/8' : 'bg-white/50'}`} />
+        </div>
+        <div className="relative mx-auto max-w-[1320px] p-4 pt-4 md:p-5 md:pt-6">
+          <div className={`mb-6 flex flex-col gap-4 border-b pb-5 md:flex-row md:items-start md:justify-between ${sectionDivider}`}>
             <div>
-              <h1 className="text-3xl font-black uppercase tracking-[0.2em]" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-                SAVINGS
+              <h1 className="text-2xl font-black uppercase tracking-[0.18em]" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                {tt('menu.savings', 'SAVINGS')}
               </h1>
               <p className={`mt-2 text-sm ${mutedText}`}>
-                Goals and progress
+                {tt('savings.subtitle', 'Goals and progress')}
               </p>
             </div>
 
             <button
               type="button"
               onClick={() => document.getElementById('create-goal-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              className="rounded-2xl bg-[#d9ff34] px-6 py-3 text-sm font-black text-black hover:bg-[#cbf029]"
+              className={`rounded-2xl px-6 py-3 text-sm font-black transition-all ${
+                isDark ? 'bg-[#d9ff34] text-black hover:bg-[#cbf029]' : 'bg-[#84cc16] text-white hover:bg-[#65a30d]'
+              }`}
             >
-              + New Goal
+              {tt('savings.newGoal', '+ New Goal')}
             </button>
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div className={`relative overflow-hidden rounded-[24px] border p-8 ${cardClass}`}>
-              <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-gradient-radial from-[#d9ff34]/20 to-transparent blur-3xl opacity-60" />
-              <div className={`mb-4 text-[11px] font-bold uppercase tracking-[0.28em] ${labelText}`}>Total Saved</div>
-              <div className="text-5xl font-black tracking-tight text-[#d9ff34]">{format(totalSaved)}</div>
+            <div className={`relative overflow-hidden rounded-[22px] border p-6 ${cardClass}`}>
+              <div className={`pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-gradient-radial to-transparent blur-3xl opacity-60 ${isDark ? 'from-[#d9ff34]/20' : 'from-[#84cc16]/20'}`} />
+              <div className={`mb-4 text-[11px] font-bold uppercase tracking-[0.28em] ${labelText}`}>{tt('savings.totalSaved', 'Total Saved')}</div>
+              <div className={`text-4xl font-black tracking-tight ${isDark ? 'text-[#d9ff34]' : 'text-[#84cc16]'}`}>{format(totalSaved)}</div>
               <div className={`mt-3 text-sm ${mutedText}`}>Across {activeGoals.length} goals</div>
-              <div className="mt-6 inline-flex rounded-xl bg-[#d9ff34]/10 px-4 py-2 text-sm font-bold text-[#d9ff34]">
+              <div className={`mt-6 inline-flex rounded-xl px-4 py-2 text-sm font-bold ${isDark ? 'bg-[#d9ff34]/10 text-[#d9ff34]' : 'bg-[#84cc16]/10 text-[#84cc16]'}`}>
                 {activeGoals.length} goals active
               </div>
             </div>
 
-            <div className={`relative overflow-hidden rounded-[24px] border p-8 ${cardClass}`}>
-              <div className={`mb-4 text-[11px] font-bold uppercase tracking-[0.28em] ${labelText}`}>Reserved This Month</div>
-              <div className={`text-5xl font-black tracking-tight ${isDark ? 'text-white' : 'text-[#11131b]'}`}>{format(reservedThisMonth)}</div>
+            <div className={`relative overflow-hidden rounded-[22px] border p-6 ${cardClass}`}>
+              <div className={`mb-4 text-[11px] font-bold uppercase tracking-[0.28em] ${labelText}`}>{tt('savings.reservedThisMonth', 'Reserved This Month')}</div>
+              <div className={`text-4xl font-black tracking-tight ${isDark ? 'text-white' : 'text-[#11131b]'}`}>{format(reservedThisMonth)}</div>
               <div className={`mt-3 text-sm ${mutedText}`}>Auto-allocated fixed amount</div>
               <div className="mt-6 inline-flex rounded-xl bg-[#8b5cf6]/10 px-4 py-2 text-sm font-bold text-[#8b5cf6]">
                 {activeGoals.filter((goal) => goal.autoAllocate?.enabled).length} auto-allocate enabled
               </div>
             </div>
 
-            <div className={`relative overflow-hidden rounded-[24px] border p-8 ${cardClass}`}>
-              <div className={`mb-4 text-[11px] font-bold uppercase tracking-[0.28em] ${labelText}`}>Nearest Deadline</div>
-              <div className="text-5xl font-black tracking-tight text-[#fbbf24]">
+            <div className={`relative overflow-hidden rounded-[22px] border p-6 ${cardClass}`}>
+              <div className={`mb-4 text-[11px] font-bold uppercase tracking-[0.28em] ${labelText}`}>{tt('savings.nearestDeadline', 'Nearest Deadline')}</div>
+              <div className="text-4xl font-black tracking-tight text-[#fbbf24]">
                 {nearestDeadline ? formatDeadlineLabel(nearestDeadline.targetDate) : '—'}
               </div>
               <div className={`mt-3 text-sm ${mutedText}`}>
@@ -210,31 +284,135 @@ export default function SavingsPage() {
             </div>
           </div>
 
-          <div className="mt-8">
-            <div className={`mb-6 text-[13px] font-black uppercase tracking-[0.22em] ${labelText}`}>
-              Goals Overview
+          <section className={`mt-6 rounded-[24px] border p-6 ${cardClass}`}>
+            <div className={`flex flex-col gap-3 border-b pb-5 md:flex-row md:items-center md:justify-between ${sectionDivider}`}>
+              <div>
+                <h2 className={`text-[20px] font-bold ${isDark ? 'text-white' : 'text-[#11131b]'}`}>{tt('saving.jars', 'Jars')}</h2>
+                <p className={`mt-1 text-sm ${mutedText}`}>{tt('saving.jarsDesc', 'Separate buckets for savings, goals, and transfers.')}</p>
+              </div>
+              <div className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold ${isDark ? 'border-white/10 bg-white/[0.03] text-white' : 'border-black/10 bg-white text-[#11131b]'}`}>
+                <LuWallet className={labelText} />
+                {jars.length} {tt('saving.jarCount', 'jars')}
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+            <form onSubmit={createJar} className="mt-5 flex flex-col gap-3 md:flex-row md:items-end">
+              <div className="flex-1">
+                <label className={`mb-2 block text-xs font-semibold uppercase tracking-[0.18em] ${labelText}`}>
+                  {tt('saving.newJarName', 'New Jar Name')}
+                </label>
+                <input
+                  value={newJarName}
+                  onChange={(e) => setNewJarName(e.target.value)}
+                  placeholder={tt('saving.jarPlaceholder', 'e.g. Emergency Fund')}
+                  className={`w-full rounded-2xl border px-4 py-3 outline-none ${inputClass}`}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={creatingJar || !newJarName.trim()}
+                className={`rounded-2xl px-5 py-3 text-sm font-black ${
+                  creatingJar || !newJarName.trim()
+                    ? 'cursor-not-allowed bg-white/10 text-[#7b8095]'
+                    : isDark ? 'bg-[#d9ff34] text-black hover:bg-[#cbf029]' : 'bg-[#84cc16] text-white hover:bg-[#65a30d]'
+                }`}
+              >
+                {creatingJar ? tt('common.creating', 'Creating...') : tt('saving.addJar', 'Add Jar')}
+              </button>
+            </form>
+
+            <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {jars.map((jar) => {
+                const amount = jarAmounts[jar._id] || '';
+                const balance = Number(jar.balance || 0);
+                return (
+                  <div key={jar._id} className={`rounded-[22px] border p-5 ${isDark ? 'border-white/8 bg-white/[0.02]' : 'border-black/8 bg-[rgba(17,19,27,0.03)]'}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`flex h-11 w-11 items-center justify-center rounded-2xl text-lg ${isDark ? 'bg-white/[0.05]' : 'bg-white'}`}>
+                          <LuWallet />
+                        </div>
+                        <div>
+                          <div className={`text-[16px] font-semibold ${isDark ? 'text-white' : 'text-[#11131b]'}`}>{jar.name}</div>
+                          <div className={`text-xs uppercase tracking-[0.18em] ${mutedText}`}>{jar.isPrimary ? tt('saving.primaryJar', 'Primary jar') : tt('saving.jar', 'Jar')}</div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeJar(jar._id, balance)}
+                        className={`rounded-xl border p-2 ${balance > 0 ? 'cursor-not-allowed opacity-50' : outlineButton}`}
+                        title={balance > 0 ? 'Withdraw to 0 before delete' : 'Delete jar'}
+                      >
+                        <LuTrash2 />
+                      </button>
+                    </div>
+
+                    <div className="mt-4">
+                      <div className={`text-[11px] uppercase tracking-[0.2em] ${labelText}`}>{tt('saving.balance', 'Balance')}</div>
+                      <div className={`mt-2 text-2xl font-black ${isDark ? 'text-white' : 'text-[#11131b]'}`}>{format(balance)}</div>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-3">
+                      <input
+                        value={amount}
+                        onChange={(e) => changeJarAmount(jar._id, e.target.value)}
+                        placeholder={tt('saving.amount', 'Amount (THB)')}
+                        className={`w-full rounded-2xl border px-4 py-3 outline-none ${inputClass}`}
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => fundJar(jar._id)}
+                          className={`flex-1 rounded-2xl px-4 py-3 text-sm font-black ${isDark ? 'bg-[#d9ff34] text-black hover:bg-[#cbf029]' : 'bg-[#84cc16] text-white hover:bg-[#65a30d]'}`}
+                        >
+                          <span className="inline-flex items-center gap-2"><LuArrowUp /> {tt('saving.fund', 'Fund')}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => withdrawJar(jar._id)}
+                          className={`flex-1 rounded-2xl px-4 py-3 text-sm font-black ${isDark ? 'bg-white/10 text-white hover:bg-white/[0.14]' : 'bg-black/5 text-[#11131b] hover:bg-black/10'}`}
+                        >
+                          <span className="inline-flex items-center gap-2"><LuArrowDown /> {tt('saving.withdraw', 'Withdraw')}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {jars.length === 0 && (
+                <div className={`col-span-full py-8 text-sm ${mutedText}`}>
+                  {tt('saving.noJars', 'No jars yet. Create one above.')}
+                </div>
+              )}
+            </div>
+          </section>
+
+          <div className="mt-6">
+            <div className={`mb-5 text-[13px] font-black uppercase tracking-[0.2em] ${labelText}`}>
+              {tt('savings.goalsOverview', 'Goals Overview')}
+            </div>
+
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
               {goalCards.length ? (
                 goalCards.map((goal) => (
                   <div
                     key={goal._id}
-                    className={`rounded-[28px] border p-6 ${cardClass}`}
+                    className={`rounded-[24px] border p-5 ${cardClass}`}
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <h3 className={`text-[18px] font-medium ${isDark ? 'text-white' : 'text-[#11131b]'}`}>{goal.title}</h3>
+                        <h3 className={`text-[17px] font-medium ${isDark ? 'text-white' : 'text-[#11131b]'}`}>{goal.title}</h3>
                         <p className={`mt-1 text-sm ${mutedText}`}>
-                          {format(goal.saved)} saved of {format(goal.target)} target
+                          {format(goal.saved)} {tt('savings.savedOf', 'saved of')} {format(goal.target)} {tt('savings.target', 'target')}
                         </p>
                       </div>
-                      <div className="text-4xl font-black" style={{ color: goal.color }}>
+                      <div className="text-3xl font-black" style={{ color: goal.color }}>
                         {goal.pct}%
                       </div>
                     </div>
 
-                    <div className={`mt-5 h-2 rounded-full ${isDark ? 'bg-white/[0.04]' : 'bg-black/[0.06]'}`}>
+                    <div className={`mt-4 h-2 rounded-full ${isDark ? 'bg-white/[0.04]' : 'bg-black/[0.06]'}`}>
                       <div
                         className="h-2 rounded-full"
                         style={{
@@ -244,17 +422,17 @@ export default function SavingsPage() {
                       />
                     </div>
 
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                       <div className="flex flex-wrap gap-2">
                         <span
                           className="rounded-xl px-4 py-2 text-sm font-bold"
                           style={{ backgroundColor: `${goal.color}20`, color: goal.color }}
                         >
-                          {goal.targetDate ? `Due ${formatDeadlineLabel(goal.targetDate)}` : 'No deadline'}
+                          {goal.targetDate ? `${tt('savings.due', 'Due')} ${formatDeadlineLabel(goal.targetDate)}` : tt('savings.noDeadline', 'No deadline')}
                         </span>
                         {goal.autoAllocate?.enabled && (
                           <span className="rounded-xl bg-[#8b5cf6]/10 px-4 py-2 text-sm font-bold text-[#8b5cf6]">
-                            Auto allocate
+                            {tt('savings.autoAllocate', 'Auto allocate')}
                           </span>
                         )}
                       </div>
@@ -264,22 +442,24 @@ export default function SavingsPage() {
                         onClick={() => removeGoal(goal._id)}
                         className={`rounded-xl border px-4 py-2 text-sm font-semibold ${outlineButton}`}
                       >
-                        <span className="inline-flex items-center gap-2"><LuTrash2 /> Delete</span>
+                        <span className="inline-flex items-center gap-2"><LuTrash2 /> {tt('common.delete', 'Delete')}</span>
                       </button>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => fundGoal(goal._id)}
-                      className="mt-6 w-full rounded-2xl bg-[#d9ff34] px-5 py-4 text-sm font-black text-black hover:bg-[#cbf029]"
+                      className={`mt-5 w-full rounded-2xl px-5 py-3 text-sm font-black transition-all ${
+                        isDark ? 'bg-[#d9ff34] text-black hover:bg-[#cbf029]' : 'bg-[#84cc16] text-white hover:bg-[#65a30d]'
+                      }`}
                     >
-                      + Add to Goal
+                      {tt('savings.addToGoal', '+ Add to Goal')}
                     </button>
                   </div>
                 ))
               ) : (
                 <div className={`col-span-full py-10 text-sm ${mutedText}`}>
-                  No goals yet. Create one below.
+                  {tt('savings.noGoals', 'No goals yet. Create one below.')}
                 </div>
               )}
             </div>
@@ -287,14 +467,14 @@ export default function SavingsPage() {
 
           <section
             id="create-goal-form"
-            className={`mt-6 rounded-[28px] border p-8 ${cardClass}`}
+            className={`mt-5 rounded-[24px] border p-6 ${cardClass}`}
           >
-            <h2 className={`text-[22px] font-bold ${isDark ? 'text-white' : 'text-[#11131b]'}`}>Create New Goal</h2>
+            <h2 className={`text-[20px] font-bold ${isDark ? 'text-white' : 'text-[#11131b]'}`}>{tt('savings.createNewGoal', 'Create New Goal')}</h2>
 
-            <form onSubmit={createGoal} className="mt-8 space-y-6">
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <form onSubmit={createGoal} className="mt-6 space-y-5">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label className={`mb-2 block text-xs font-semibold uppercase tracking-[0.18em] ${labelText}`}>Goal Title</label>
+                  <label className={`mb-2 block text-xs font-semibold uppercase tracking-[0.18em] ${labelText}`}>{tt('savings.goalTitle', 'Goal Title')}</label>
                   <input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
@@ -304,7 +484,7 @@ export default function SavingsPage() {
                 </div>
 
                 <div>
-                  <label className={`mb-2 block text-xs font-semibold uppercase tracking-[0.18em] ${labelText}`}>Target Amount (THB)</label>
+                  <label className={`mb-2 block text-xs font-semibold uppercase tracking-[0.18em] ${labelText}`}>{tt('savings.targetAmount', 'Target Amount (THB)')}</label>
                   <input
                     value={targetAmount}
                     onChange={(e) => setTargetAmount(e.target.value)}
@@ -314,7 +494,7 @@ export default function SavingsPage() {
                 </div>
 
                 <div>
-                  <label className={`mb-2 block text-xs font-semibold uppercase tracking-[0.18em] ${labelText}`}>Target Date</label>
+                  <label className={`mb-2 block text-xs font-semibold uppercase tracking-[0.18em] ${labelText}`}>{tt('savings.targetDate', 'Target Date')}</label>
                   <div className="relative">
                     <input
                       type="date"
@@ -327,7 +507,7 @@ export default function SavingsPage() {
                 </div>
 
                 <div>
-                  <label className={`mb-2 block text-xs font-semibold uppercase tracking-[0.18em] ${labelText}`}>Linked Jar</label>
+                  <label className={`mb-2 block text-xs font-semibold uppercase tracking-[0.18em] ${labelText}`}>{tt('savings.linkedJar', 'Linked Jar')}</label>
                   <select
                     value={jarId}
                     onChange={(e) => setJarId(e.target.value)}
@@ -344,7 +524,7 @@ export default function SavingsPage() {
 
               <div className="grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,1fr)_320px]">
                 <div>
-                  <label className={`mb-3 block text-xs font-semibold uppercase tracking-[0.18em] ${labelText}`}>Label Color</label>
+                  <label className={`mb-3 block text-xs font-semibold uppercase tracking-[0.18em] ${labelText}`}>{tt('savings.labelColor', 'Label Color')}</label>
                   <div className="flex flex-wrap gap-3">
                     {GOAL_COLORS.map((color, index) => (
                       <button
@@ -360,9 +540,9 @@ export default function SavingsPage() {
                 </div>
 
                 <div className={`rounded-[22px] border p-5 ${subtleSurface}`}>
-                  <div className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-[#11131b]'}`}>Enable auto-allocate on income</div>
+                  <div className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-[#11131b]'}`}>{tt('savings.enableAutoAllocate', 'Enable auto-allocate on income')}</div>
                   <p className={`mt-1 text-sm ${labelText}`}>
-                    Auto-allocate a portion of each income into this goal.
+                    {tt('savings.autoAllocateDescription', 'Auto-allocate a portion of each income into this goal.')}
                   </p>
 
                   <div className="mt-4 flex items-center gap-3">
@@ -371,8 +551,8 @@ export default function SavingsPage() {
                       onChange={(e) => setAaType(e.target.value)}
                       className={`rounded-2xl border bg-transparent px-4 py-3 outline-none ${isDark ? 'border-white/10 text-white' : 'border-black/10 text-[#11131b]'}`}
                     >
-                      <option value="percent">Percent</option>
-                      <option value="fixed">Fixed</option>
+                      <option value="percent">{tt('savings.percent', 'Percent')}</option>
+                      <option value="fixed">{tt('savings.fixed', 'Fixed')}</option>
                     </select>
                     <input
                       value={aaValue}
@@ -382,7 +562,7 @@ export default function SavingsPage() {
                     <button
                       type="button"
                       onClick={() => setAaEnabled((prev) => !prev)}
-                      className={`relative h-10 w-20 rounded-full transition-colors ${aaEnabled ? 'bg-[#d9ff34]' : isDark ? 'bg-white/10' : 'bg-black/10'}`}
+                      className={`relative h-10 w-20 rounded-full transition-colors ${aaEnabled ? (isDark ? 'bg-[#d9ff34]' : 'bg-[#84cc16]') : isDark ? 'bg-white/10' : 'bg-black/10'}`}
                     >
                       <span
                         className={`absolute top-1 h-8 w-8 rounded-full bg-white transition-transform ${aaEnabled ? 'translate-x-10' : 'translate-x-1'}`}
@@ -398,10 +578,10 @@ export default function SavingsPage() {
                 className={`rounded-2xl px-6 py-4 text-sm font-black ${
                   creating
                     ? 'cursor-not-allowed bg-white/10 text-[#7b8095]'
-                    : 'bg-[#d9ff34] text-black hover:bg-[#cbf029]'
+                    : isDark ? 'bg-[#d9ff34] text-black hover:bg-[#cbf029]' : 'bg-[#84cc16] text-white hover:bg-[#65a30d]'
                 }`}
               >
-                {creating ? 'Creating...' : '✦ Create Goal'}
+                {creating ? tt('common.creating', 'Creating...') : tt('savings.createGoal', '✦ Create Goal')}
               </button>
             </form>
           </section>

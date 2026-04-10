@@ -1,8 +1,7 @@
 import React, { useContext } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { UserContext } from '../../context/UserContext';
-
-const COLORS = ['#8b5cf6', '#a3e635', '#eab308', '#fb7185', '#38bdf8', '#f97316', '#22d3ee'];
+import useT from '../../hooks/useT';
 
 const CustomTooltip = ({ active, payload, isDark }) => {
   if (active && payload && payload.length) {
@@ -23,6 +22,9 @@ const CustomTooltip = ({ active, payload, isDark }) => {
 const DarkSpendingChart = ({ data, format }) => {
   const { prefs } = useContext(UserContext) || {};
   const isDark = prefs?.theme === 'dark';
+  const themeGreen = isDark ? '#a3e635' : '#84cc16';
+  const COLORS = ['#8b5cf6', themeGreen, '#eab308', '#fb7185', '#38bdf8', '#f97316', '#22d3ee'];
+
   const chartData = Array.isArray(data) && data.length > 0 ? data : [];
 
   // Attach color to each item for tooltip
@@ -37,28 +39,31 @@ const DarkSpendingChart = ({ data, format }) => {
     ? 'bg-[#13141C] border-white/[0.03] shadow-[0_8px_30px_rgb(0,0,0,0.5)]'
     : 'bg-[rgba(255,253,247,0.96)] border-black/8 shadow-[0_16px_40px_rgba(15,23,42,0.08)]';
 
+  const { t } = useT();
+  const tt = (k, f) => { const v = t?.(k); return v && v !== k ? v : f; };
+
   return (
-    <div className={`h-[300px] w-full overflow-hidden rounded-[24px] border p-6 flex flex-col relative ${cardClass}`}>
+    <div className={`h-[260px] w-full overflow-hidden rounded-[22px] border p-5 flex flex-col relative ${cardClass}`}>
       <div className="flex justify-between items-center mb-2">
-        <h3 className={`text-[13px] font-black uppercase tracking-[0.1em] ${isDark ? 'text-gray-100' : 'text-[#11131b]'}`}>Spending</h3>
-        <span className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-gray-500' : 'text-[#6b7080]'}`}>By category</span>
+        <h3 className={`text-[12px] font-black uppercase tracking-[0.1em] ${isDark ? 'text-gray-100' : 'text-[#11131b]'}`}>{tt('dashboard.spending', 'Spending')}</h3>
+        <span className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-gray-500' : 'text-[#6b7080]'}`}>{tt('dashboard.byCategory', 'By category')}</span>
       </div>
 
       {coloredData.length === 0 ? (
-        <div className={`flex flex-1 items-center justify-center text-xs font-bold uppercase tracking-widest ${isDark ? 'text-gray-500' : 'text-[#6b7080]'}`}>
-          No spending data
+        <div className={`flex flex-1 items-center justify-center text-[11px] font-bold uppercase tracking-widest ${isDark ? 'text-gray-500' : 'text-[#6b7080]'}`}>
+          {tt('dashboard.noSpendingData', 'No spending data')}
         </div>
       ) : (
         <div className="flex-1 flex items-center justify-between">
           <div className="h-full w-1/2 relative flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie
+              <Pie
                   data={coloredData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
+                  innerRadius={48}
+                  outerRadius={68}
                   paddingAngle={5}
                   dataKey="value"
                   stroke="none"
@@ -71,7 +76,7 @@ const DarkSpendingChart = ({ data, format }) => {
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className={`rounded-full border px-2 py-1 text-xl font-black tracking-tighter shadow-sm ${isDark ? 'border-[#2a2b36] bg-[#13141C] text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]' : 'border-black/8 bg-white text-[#11131b]'}`}>
+              <span className={`rounded-full border px-2 py-1 text-lg font-black tracking-tighter shadow-sm ${isDark ? 'border-[#2a2b36] bg-[#13141C] text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]' : 'border-black/8 bg-white text-[#11131b]'}`}>
                 {totalLabel}
               </span>
             </div>

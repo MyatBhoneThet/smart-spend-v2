@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import AuthLayout from '../../components/layouts/AuthLayout';
+import AuthLayout from '../../components/layout/AuthLayout';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import Input from '../../components/Inputs/Input';
 import { validateEmail } from '../../utils/helper';
@@ -184,136 +184,96 @@ const REDIRECT_URI = `${window.location.origin}/auth/github/callback`;
     </div>
   );
 
-  const cardClass = isDarkTheme
-    ? 'bg-gray-900/80 backdrop-blur-xl border border-gray-700/50 text-gray-100 shadow-2xl rounded-2xl p-8 relative z-10'
-    : 'bg-white/80 backdrop-blur-xl border border-white/20 text-gray-900 shadow-2xl rounded-2xl p-8 relative z-10';
-  
-  const inputClass = isDarkTheme
-    ? 'w-full px-4 py-3 rounded-lg bg-gray-800/50 backdrop-blur-sm text-gray-100 placeholder-gray-400 border border-gray-600/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300'
-    : 'w-full px-4 py-3 rounded-lg bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-500 border border-gray-300/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300';
-  
-  const buttonClass = isDarkTheme
-    ? 'w-full py-3 mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl'
-    : 'w-full py-3 mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl';
-
-  const githubButtonClass = isDarkTheme
-    ? 'w-full py-3 px-4 bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white font-medium rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2'
-    : 'w-full py-3 px-4 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2';
-
   const textClass = isDarkTheme ? 'text-gray-400' : 'text-gray-600';
-  const linkClass = 'text-blue-400 hover:text-blue-300 font-medium underline transition-colors duration-200';
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center p-4 relative"
-      style={dynamicBackgroundStyles}
-    >
-      <FloatingOrbs />
-      
-      <div 
-        className="absolute inset-0 opacity-20"
-        style={{
-          backgroundImage: isDarkTheme
-            ? `radial-gradient(circle, rgba(59, 130, 246, 0.1) 1px, transparent 1px)`
-            : `radial-gradient(circle, rgba(100, 116, 139, 0.1) 1px, transparent 1px)`,
-          backgroundSize: '50px 50px'
-        }}
-      />
-
-      <div className={`${cardClass} max-w-md w-full animate-fade-in-up`}>
-          <div className="text-center mb-6">
-            <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Welcome Back
-            </h2>
-            <p className={`text-sm ${textClass}`}>
-              Enter your details to access your account
-            </p>
-          </div>
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="transform transition-all duration-300 hover:scale-105">
-              <Input
-                value={email}
-                onChange={({ target }) => setEmail(target.value)}
-                label="Email Address"
-                placeholder="john@example.com"
-                type="text"
-                className={inputClass}
-              />
-            </div>
-
-            <div className="transform transition-all duration-300 hover:scale-105">
-              <Input
-                value={password}
-                onChange={({ target }) => setPassword(target.value)}
-                label="Password"
-                placeholder="Minimum 8 characters"
-                type="password"
-                className={inputClass}
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 animate-shake">
-                <p className="text-red-400 text-sm text-center">{error}</p>
-              </div>
-            )}
-
-            <button 
-              type="submit" 
-              className={buttonClass} 
-              disabled={loading}
-            >
-              {loading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Logging in...
-                </div>
-              ) : (
-                'LOGIN'
-              )}
-            </button>
-
-            <div className="flex items-center my-6">
-              <hr className={`flex-1 ${isDarkTheme ? 'border-gray-600/30' : 'border-gray-300/30'}`} />
-              <span className={`px-3 text-sm font-medium ${textClass}`}>OR</span>
-              <hr className={`flex-1 ${isDarkTheme ? 'border-gray-600/30' : 'border-gray-300/30'}`} />
-            </div>
-
-            <div className="space-y-3">
-              <div className="w-full flex justify-center">
-                <div className="transform transition-all duration-300 hover:scale-105">
-                  <GoogleLogin
-                    onSuccess={handleGoogleSuccess}
-                    onError={() => setError('Google sign-in failed. Please try again.')}
-                    useOneTap={false}
-                    theme={isDarkTheme ? "filled_black" : "outline"}
-                    size="large"
-                    shape="rectangular"
-                    text="signin_with"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleGitHubLogin}
-                className={githubButtonClass}
-                disabled={loading}
-              >
-                <FaGithub className="text-xl" />
-                Continue with GitHub
-              </button>
-            </div>
-          </form>
-
-          <p className={`text-sm mt-6 text-center ${textClass}`}>
-            Don't have an account?{' '}
-            <Link className={linkClass} to="/signup">
-              Sign Up
-            </Link>
+    <AuthLayout>
+      <div className="w-full">
+        <div className="text-center mb-6">
+          <h2 className="text-3xl font-black tracking-tight bg-gradient-to-r from-[#84cc16] via-[#d9ff34] to-[#47d7ff] bg-clip-text text-transparent">
+            Welcome Back
+          </h2>
+          <p className={`mt-2 text-sm ${textClass}`}>
+            Enter your details to access your account
           </p>
         </div>
+
+        <form onSubmit={handleLogin} className="space-y-4">
+          <Input
+            value={email}
+            onChange={({ target }) => setEmail(target.value)}
+            label="Email Address"
+            placeholder="john@example.com"
+            type="text"
+          />
+
+          <Input
+            value={password}
+            onChange={({ target }) => setPassword(target.value)}
+            label="Password"
+            placeholder="Minimum 8 characters"
+            type="password"
+          />
+
+          {error && (
+            <div className="rounded-2xl border border-rose-400/20 bg-rose-500/10 p-3">
+              <p className="text-center text-sm text-rose-400">{error}</p>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="w-full rounded-2xl border border-white/20 bg-[#d9ff34] px-5 py-3 text-sm font-black text-black shadow-[0_18px_40px_rgba(217,255,52,0.25)] transition-all hover:-translate-y-0.5 hover:bg-[#cbf029] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={loading}
+          >
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <div className="mr-2 h-5 w-5 animate-spin rounded-full border-b-2 border-black"></div>
+                Logging in...
+              </div>
+            ) : (
+              'LOGIN'
+            )}
+          </button>
+
+          <div className="flex items-center gap-3 py-2">
+            <hr className="flex-1 border-white/60 dark:border-white/10" />
+            <span className={`px-2 text-xs font-bold uppercase tracking-[0.22em] ${textClass}`}>OR</span>
+            <hr className="flex-1 border-white/60 dark:border-white/10" />
+          </div>
+
+          <div className="flex items-center justify-center gap-4 pt-1">
+            <div className="oauth-pop flex h-14 w-14 items-center justify-center">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setError('Google sign-in failed. Please try again.')}
+                useOneTap={false}
+                theme={isDarkTheme ? "filled_black" : "outline"}
+                size="large"
+                shape="circle"
+                type="icon"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGitHubLogin}
+              className="oauth-icon-btn oauth-pop"
+              aria-label="Continue with GitHub"
+              disabled={loading}
+            >
+              <FaGithub className="text-xl text-white" />
+            </button>
+          </div>
+        </form>
+
+        <p className={`mt-6 text-center text-sm ${textClass}`}>
+          Don't have an account?{' '}
+          <Link className="font-semibold text-[#84cc16] underline decoration-[#84cc16]/40 underline-offset-4" to="/signup">
+            Sign Up
+          </Link>
+        </p>
+      </div>
 
         <style>{`
           @keyframes fade-in-up {
@@ -341,7 +301,7 @@ const REDIRECT_URI = `${window.location.origin}/auth/github/callback`;
             animation: shake 0.5s ease-in-out;
           }
         `}</style>
-      </div>
+    </AuthLayout>
     );
   };
 

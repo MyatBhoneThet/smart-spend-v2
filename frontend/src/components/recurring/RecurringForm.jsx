@@ -1,4 +1,6 @@
 import React, { useState, useContext } from 'react';
+import CategorySelect from '../common/CategorySelect';
+import EmojiPickerPopup from '../layout/EmojiPickerPopup';
 import axiosInstance from '../../utils/axiosInstance';
 import { API_PATHS } from '../../utils/apiPaths';
 import { UserContext } from '../../context/UserContext';
@@ -13,11 +15,13 @@ export default function RecurringForm({ initial, onSaved, onCancel }) {
     return val && val !== key ? val : fallback;
   };
 
-  const [form, setForm] = useState(() => initial || {
+  const [form, setForm] = useState(() => ({
     type: 'expense',
+    categoryId: '',
     category: 'Rent',
     source: '',
-    amount: initial ? String(initial.amount ?? '') : '',
+    icon: '💸',
+    amount: '',
     // NEW: frequency (defaults to monthly; your engine also supports it)
     repeat: 'monthly',
     dayOfMonth: 1,
@@ -26,7 +30,9 @@ export default function RecurringForm({ initial, onSaved, onCancel }) {
     timezone: 'Asia/Bangkok', // UI-only
     notes: '',
     isActive: true,
-  });
+    ...(initial || {}),
+    amount: initial ? String(initial.amount ?? '') : '',
+  }));
 
   const [saving, setSaving] = useState(false);
   function setField(k, v) { setForm((f) => ({ ...f, [k]: v })); }
@@ -37,8 +43,10 @@ export default function RecurringForm({ initial, onSaved, onCancel }) {
     try {
       const body = {
         type: form.type,
+        categoryId: form.categoryId || undefined,
         category: form.category,
         source: form.source || '',
+        icon: form.icon || '',
         amount: Number(form.amount),
         // NEW: send repeat; default to monthly for legacy docs
         repeat: (form.repeat || 'monthly').toLowerCase(),
@@ -86,7 +94,17 @@ export default function RecurringForm({ initial, onSaved, onCancel }) {
       <div className="grid grid-cols-2 gap-4">
         <label className="flex flex-col text-sm">
           {tt('recurring.type', 'Type')}
-          <select className={inputClass} value={form.type} onChange={(e)=>setField('type', e.target.value)}>
+          <select
+            className={inputClass}
+            value={form.type}
+            onChange={(e) => {
+              const nextType = e.target.value;
+              setField('type', nextType);
+              setField('categoryId', '');
+              setField('category', 'Uncategorized');
+              setField('icon', nextType === 'income' ? '💰' : '💸');
+            }}
+          >
             <option value="expense">{tt('recurring.expense', 'Expense')}</option>
             <option value="income">{tt('recurring.income', 'Income')}</option>
           </select>
@@ -94,12 +112,20 @@ export default function RecurringForm({ initial, onSaved, onCancel }) {
 
         <label className="flex flex-col text-sm">
           {tt('recurring.category', 'Category')}
-          <input
-            className={inputClass}
-            value={form.category}
-            onChange={(e)=>setField('category', e.target.value)}
-            placeholder={tt('recurring.categoryPlaceholder', 'Rent / Salary / Loan Payment')}
+          <CategorySelect
+            type={form.type}
+            value={form.categoryId}
+            isDark={isDark}
+            onChange={(id, name) => {
+              setField('categoryId', id);
+              setField('category', name || 'Uncategorized');
+            }}
           />
+        </label>
+
+        <label className="flex flex-col text-sm">
+          {tt('recurring.icon', 'Icon')}
+          <EmojiPickerPopup icon={form.icon} onSelect={(emoji) => setField('icon', emoji)} />
         </label>
 
         <label className="flex flex-col text-sm">

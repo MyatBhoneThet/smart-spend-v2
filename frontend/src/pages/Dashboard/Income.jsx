@@ -7,13 +7,13 @@ import {
   LuTrash2,
 } from 'react-icons/lu';
 import { toast } from 'react-toastify';
-import DashboardLayout from '../../components/layouts/DashboardLayout';
-import Modal from '../../components/layouts/Modal';
+import DashboardLayout from '../../components/layout/DashboardLayout';
+import Modal from '../../components/layout/Modal';
 import AddIncomeForm from '../../components/Income/AddIncomeForm';
-import DeleteAlert from '../../components/layouts/DeleteAlert';
+import DeleteAlert from '../../components/layout/DeleteAlert';
 import BulkDeleteIncome from '../../components/Income/bulkDeleteIncome';
 import FilterControl from '../../components/common/FilterControl';
-import NeonTopBar from '../../components/NeonDashboard/NeonTopBar';
+import NeonTopBar from '../../components/Dashboard/NeonTopBar';
 import axiosInstance from '../../utils/axiosInstance';
 import { API_PATHS } from '../../utils/apiPaths';
 import { useUserAuth } from '../../hooks/useUserAuth';
@@ -29,20 +29,6 @@ const PERIOD_DAYS = {
   Y: 365,
 };
 
-const MONTHS = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
 
 const monthYearLabel = (date) =>
   new Intl.DateTimeFormat('en-US', {
@@ -86,30 +72,42 @@ const Income = () => {
   const isDark = prefs?.theme === 'dark';
   const { format } = useCurrency();
   const { t } = useT();
+  const tt = (key, fallback) => {
+    const val = t?.(key);
+    return val && val !== key ? val : fallback;
+  };
+
+  const MONTHS = [
+    tt('month.january', 'January'),
+    tt('month.february', 'February'),
+    tt('month.march', 'March'),
+    tt('month.april', 'April'),
+    tt('month.may', 'May'),
+    tt('month.june', 'June'),
+    tt('month.july', 'July'),
+    tt('month.august', 'August'),
+    tt('month.september', 'September'),
+    tt('month.october', 'October'),
+    tt('month.november', 'November'),
+    tt('month.december', 'December'),
+  ];
 
   const [incomeData, setIncomeData] = useState([]);
   const [filteredIncome, setFilteredIncome] = useState([]);
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState('M');
+  const [selectedPeriod, setSelectedPeriod] = useState('Y');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const [openAddIncomeModal, setOpenAddIncomeModal] = useState(false);
   const [openEditIncomeModal, setOpenEditIncomeModal] = useState(false);
   const [selectedIncome, setSelectedIncome] = useState(null);
-  const [openDeleteAlert, setOpenDeleteAlert] = useState({
-    show: false,
-    data: null,
-  });
+  const [openDeleteAlert, setOpenDeleteAlert] = useState({ show: false, data: null });
   const [openBulkDeleteModal, setOpenBulkDeleteModal] = useState(false);
 
   const mounted = useRef(true);
-
-  const tt = (key, fallback) => {
-    const val = t?.(key);
-    return val && val !== key ? val : fallback;
-  };
+  const didAutoSelectLatest = useRef(false);
 
   const fetchIncomeDetails = async () => {
     if (loading) return;
@@ -124,6 +122,16 @@ const Income = () => {
       const list = Array.isArray(data) ? data : [];
       setIncomeData(list);
       setFilteredIncome(list);
+
+      if (list.length && !didAutoSelectLatest.current) {
+        const latest = [...list].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+        if (latest?.date) {
+          const latestDate = new Date(latest.date);
+          setSelectedMonth(latestDate.getMonth());
+          setSelectedYear(latestDate.getFullYear());
+          didAutoSelectLatest.current = true;
+        }
+      }
     } catch (error) {
       console.error(error);
       toast.error('Something went wrong. Please try again.');
@@ -134,7 +142,7 @@ const Income = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const { data } = await axiosInstance.get(API_PATHS.DASHBOARD.GET_DATA);
+      const { data } = await axiosInstance.get(API_PATHS.DASHBOARD.GET_DATA(selectedPeriod));
       if (mounted.current) setDashboardData(data || null);
     } catch (error) {
       console.error('Dashboard fetch error:', error);
@@ -341,11 +349,9 @@ const Income = () => {
     return sortedIncome
       .filter((item) => {
         const date = new Date(item.date);
-        return (
-          date.getMonth() === selectedMonth && date.getFullYear() === selectedYear
-        );
+        return date.getMonth() === selectedMonth && date.getFullYear() === selectedYear;
       })
-      .sort((a, b) => new Date(a.date) - new Date(b.date));
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [selectedMonth, selectedYear, sortedIncome]);
 
   const overviewStats = useMemo(() => {
@@ -441,60 +447,68 @@ const Income = () => {
 
   const statCards = [
     {
-      title: 'TOTAL INCOME',
+      title: tt('dashboard.totalIncome', 'TOTAL INCOME'),
       value: format(
         periodIncome.reduce((sum, item) => sum + Number(item.amount || 0), 0)
       ),
-      subtitle: `This ${selectedPeriod === 'W' ? 'week' : selectedPeriod === 'M' ? 'month' : selectedPeriod === 'Q' ? 'quarter' : 'year'} · ${
+      subtitle: `${tt(`dashboard.period.${selectedPeriod}`, selectedPeriod)} · ${
         new Set(periodIncome.map((item) => sourceTitle(item))).size
-      } sources`,
+      } ${tt('income.sourcesCount', 'sources')}`,
       badge: `${monthChange >= 0 ? '↑' : '↓'} ${Math.abs(monthChange)}% vs last month`,
-      accent: 'text-[#d9ff34]',
-      badgeAccent: 'text-[#d9ff34] bg-[#d9ff34]/10',
-      glow: 'from-[#d9ff34]/20 to-transparent',
+      accent: isDark ? 'text-[#d9ff34]' : 'text-[#84cc16]',
+      badgeAccent: isDark ? 'text-[#d9ff34] bg-[#d9ff34]/10' : 'text-[#84cc16] bg-[#84cc16]/10',
+      glow: isDark ? 'from-[#d9ff34]/20 to-transparent' : 'from-[#84cc16]/20 to-transparent',
     },
     {
-      title: 'THIS MONTH',
+      title: tt('dashboard.thisMonth', 'THIS MONTH'),
       value: format(currentMonthIncome),
-      subtitle: 'Collected so far',
-      badge: `${currentMonthTransactions.length} transactions`,
+      subtitle: tt('dashboard.collectedSoFar', 'Collected so far'),
+      badge: `${currentMonthTransactions.length} ${tt('dashboard.transactions', 'transactions')}`,
       accent: isDark ? 'text-white' : 'text-[#11131b]',
       badgeAccent: 'text-[#8b5cf6] bg-[#8b5cf6]/10',
       glow: 'from-white/10 to-transparent',
     },
     {
-      title: 'AVG WEEKLY',
+      title: tt('dashboard.avgWeekly', 'AVG WEEKLY'),
       value: format(avgWeekly),
-      subtitle: 'Based on current month',
-      badge: avgWeekly > 0 ? 'On track' : 'No activity',
+      subtitle: tt('dashboard.basedOnCurrentMonth', 'Based on current month'),
+      badge: avgWeekly > 0 ? tt('dashboard.onTrack', 'On track') : tt('dashboard.noActivity', 'No activity'),
       accent: 'text-[#47d7ff]',
       badgeAccent: 'text-[#47d7ff] bg-[#47d7ff]/10',
       glow: 'from-[#47d7ff]/20 to-transparent',
     },
   ];
+  const pageClass = isDark
+    ? 'bg-[radial-gradient(circle_at_top_left,rgba(217,255,52,0.12),transparent_26%),radial-gradient(circle_at_top_right,rgba(71,215,255,0.08),transparent_22%),linear-gradient(180deg,#090b11_0%,#05070b_100%)] text-white'
+    : 'bg-[radial-gradient(circle_at_top_left,rgba(217,255,52,0.16),transparent_24%),radial-gradient(circle_at_top_right,rgba(255,255,255,0.72),transparent_20%),linear-gradient(180deg,#fefbf8_0%,#f4fbe7_100%)] text-[#11131b]';
   const cardClass = isDark
-    ? 'border-white/8 bg-[#11131b] text-white shadow-[0_8px_30px_rgba(0,0,0,0.45)]'
-    : 'border-black/8 bg-[rgba(255,253,247,0.96)] text-[#11131b] shadow-[0_16px_40px_rgba(15,23,42,0.08)]';
-  const sectionDivider = isDark ? 'border-white/8' : 'border-black/8';
-  const labelText = isDark ? 'text-[#66697d]' : 'text-[#6b7080]';
-  const mutedText = isDark ? 'text-[#6c7086]' : 'text-[#6b6f80]';
+    ? 'border-white/10 bg-white/[0.05] text-white shadow-[0_24px_90px_rgba(0,0,0,0.35)] ring-1 ring-white/[0.08] backdrop-blur-2xl'
+    : 'border-white/28 bg-white/28 text-[#11131b] shadow-[0_24px_90px_rgba(15,23,42,0.08)] ring-1 ring-white/45 backdrop-blur-3xl';
+  const sectionDivider = isDark ? 'border-white/10' : 'border-white/45';
+  const labelText = isDark ? 'text-[#8a90a7]' : 'text-[#6b7080]';
+  const mutedText = isDark ? 'text-[#7b8095]' : 'text-[#6b6f80]';
   const inputClass = isDark
-    ? 'border-white/10 bg-white/[0.03] text-white'
-    : 'border-black/10 bg-white text-[#11131b]';
+    ? 'border-white/10 bg-white/[0.05] text-white placeholder:text-[#848aa0] shadow-[0_10px_30px_rgba(0,0,0,0.12)]'
+    : 'border-white/28 bg-white/28 text-[#11131b] placeholder:text-[#8a8f9f] shadow-[0_10px_30px_rgba(15,23,42,0.05)] backdrop-blur-3xl';
   const outlineButton = isDark
-    ? 'border-white/10 bg-white/[0.03] text-[#d0d3e4] hover:bg-white/[0.05]'
-    : 'border-black/10 bg-white text-[#31374a] hover:bg-black/[0.04]';
+    ? 'border-white/10 bg-white/[0.05] text-[#d0d3e4] hover:bg-white/[0.08] backdrop-blur-2xl'
+    : 'border-white/28 bg-white/28 text-[#31374a] hover:bg-white/42 backdrop-blur-3xl';
   const subtleSurface = isDark
-    ? 'border-white/8 bg-white/[0.03]'
-    : 'border-black/8 bg-[rgba(17,19,27,0.03)]';
+    ? 'border-white/10 bg-white/[0.05]'
+    : 'border-white/28 bg-white/22 backdrop-blur-3xl';
 
   return (
     <DashboardLayout activeMenu="Income">
-      <div className={`absolute inset-0 overflow-y-auto ${isDark ? 'bg-[#090b11] text-white' : 'bg-[#f6f1e8] text-[#11131b]'}`}>
-        <div className="mx-auto max-w-[1600px] p-4 pt-6 md:p-8 md:pt-10">
+      <div className={`absolute inset-0 overflow-y-auto overflow-x-hidden ${pageClass}`}>
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className={`absolute -left-20 top-20 h-80 w-80 rounded-full blur-3xl ${isDark ? 'bg-[#d9ff34]/10' : 'bg-[#d9ff34]/18'}`} />
+          <div className={`absolute right-6 top-40 h-96 w-96 rounded-full blur-3xl ${isDark ? 'bg-[#84cc16]/10' : 'bg-[#84cc16]/14'}`} />
+          <div className={`absolute bottom-0 left-1/3 h-[26rem] w-[26rem] rounded-full blur-3xl ${isDark ? 'bg-[#47d7ff]/8' : 'bg-white/50'}`} />
+        </div>
+        <div className="relative mx-auto max-w-[1320px] p-4 pt-4 md:p-5 md:pt-6">
           <NeonTopBar
-            title="INCOME"
-            subtitle="Track your earnings"
+            title={tt('menu.income', 'INCOME')}
+            subtitle={tt('income.trackEarnings', 'Track your earnings')}
             userName={user?.fullName?.split(' ')[0] || user?.username}
             liveLabel=""
             periodLabel=""
@@ -508,14 +522,15 @@ const Income = () => {
             {statCards.map((card) => (
               <div
                 key={card.title}
-                className={`relative overflow-hidden rounded-[24px] border p-8 ${cardClass}`}
+                className={`relative overflow-hidden rounded-[22px] border p-6 ${cardClass}`}
               >
-                <div className={`pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-gradient-radial ${card.glow} blur-3xl opacity-60`} />
+                <div className={`pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-gradient-radial ${card.glow} blur-3xl opacity-80`} />
+                <div className={`pointer-events-none absolute inset-0 ${isDark ? 'bg-[linear-gradient(135deg,rgba(255,255,255,0.06),transparent_35%,transparent)]' : 'bg-[linear-gradient(135deg,rgba(255,255,255,0.56),transparent_36%,transparent)]'}`} />
                 <div className="relative">
                   <div className={`mb-4 text-[11px] font-bold uppercase tracking-[0.28em] ${labelText}`}>
                     {card.title}
                   </div>
-                  <div className={`text-5xl font-black tracking-tight ${card.accent}`}>
+                  <div className={`text-4xl font-black tracking-tight ${card.accent}`}>
                     {card.value}
                   </div>
                   <div className={`mt-3 text-sm ${mutedText}`}>{card.subtitle}</div>
@@ -527,10 +542,10 @@ const Income = () => {
             ))}
           </div>
 
-          <div className={`mt-6 rounded-[28px] border p-8 ${cardClass}`}>
-            <div className={`flex flex-col gap-5 border-b pb-6 lg:flex-row lg:items-center lg:justify-between ${sectionDivider}`}>
+          <div className={`mt-5 rounded-[24px] border p-6 ${cardClass}`}>
+            <div className={`flex flex-col gap-4 border-b pb-5 lg:flex-row lg:items-center lg:justify-between ${sectionDivider}`}>
               <div>
-                <h2 className={`text-[22px] font-bold ${isDark ? 'text-white' : 'text-[#11131b]'}`}>Income Overview</h2>
+                <h2 className={`text-[22px] font-bold ${isDark ? 'text-white' : 'text-[#11131b]'}`}>{tt('income.overview', 'Income Overview')}</h2>
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
@@ -567,44 +582,48 @@ const Income = () => {
                 <button
                   type="button"
                   onClick={() => setOpenAddIncomeModal(true)}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-[#d9ff34] px-5 py-2.5 text-sm font-black text-black shadow-[0_0_16px_rgba(217,255,52,0.25)]"
+                  className={`inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-black transition-all backdrop-blur-2xl border border-white/20 ${
+                    isDark
+                      ? 'bg-[#d9ff34] text-black shadow-[0_18px_40px_rgba(217,255,52,0.25)] hover:bg-[#cbf029]'
+                      : 'bg-[#84cc16] text-white shadow-[0_18px_40px_rgba(132,204,22,0.18)] hover:bg-[#65a30d]'
+                  }`}
                 >
                   <LuPlus />
-                  Add Income
+                  {tt('income.add', 'Add Income')}
                 </button>
               </div>
             </div>
 
-            <div className={`grid grid-cols-2 gap-6 border-b py-6 md:grid-cols-4 ${sectionDivider}`}>
+            <div className={`grid grid-cols-2 gap-4 border-b py-5 md:grid-cols-4 ${sectionDivider}`}>
               <div>
                 <div className={`text-[11px] uppercase tracking-[0.28em] ${labelText}`}>
-                  Total Period
+                  {tt('income.totalPeriod', 'Total Period')}
                 </div>
-                <div className="mt-2 text-3xl font-black text-[#d9ff34]">
+                <div className={`mt-2 text-2xl font-black ${isDark ? 'text-[#d9ff34]' : 'text-[#84cc16]'}`}>
                   {format(overviewStats.total)}
                 </div>
               </div>
               <div>
                 <div className={`text-[11px] uppercase tracking-[0.28em] ${labelText}`}>
-                  Transactions
+                  {tt('income.transactionsCount', 'Transactions')}
                 </div>
-                <div className={`mt-2 text-3xl font-black ${isDark ? 'text-white' : 'text-[#11131b]'}`}>
+                <div className={`mt-2 text-2xl font-black ${isDark ? 'text-white' : 'text-[#11131b]'}`}>
                   {overviewStats.transactions}
                 </div>
               </div>
               <div>
                 <div className={`text-[11px] uppercase tracking-[0.28em] ${labelText}`}>
-                  Highest Single
+                  {tt('income.highestSingle', 'Highest Single')}
                 </div>
-                <div className={`mt-2 text-3xl font-black ${isDark ? 'text-white' : 'text-[#11131b]'}`}>
+                <div className={`mt-2 text-2xl font-black ${isDark ? 'text-white' : 'text-[#11131b]'}`}>
                   {format(overviewStats.highest)}
                 </div>
               </div>
               <div>
                 <div className={`text-[11px] uppercase tracking-[0.28em] ${labelText}`}>
-                  Average
+                  {tt('income.average', 'Average')}
                 </div>
-                <div className={`mt-2 text-3xl font-black ${isDark ? 'text-white' : 'text-[#11131b]'}`}>
+                <div className={`mt-2 text-2xl font-black ${isDark ? 'text-white' : 'text-[#11131b]'}`}>
                   {format(overviewStats.average)}
                 </div>
               </div>
@@ -624,10 +643,10 @@ const Income = () => {
                           <div
                             className={`w-14 rounded-[10px] ${
                               bar.emphasis
-                                ? 'bg-[#d9ff34] shadow-[0_0_18px_rgba(217,255,52,0.28)]'
+                                ? 'bg-[#d9ff34] shadow-[0_0_24px_rgba(217,255,52,0.3)]'
                                 : bar.amount > 0
-                                ? 'bg-[#aacb2d]'
-                                : isDark ? 'bg-white/8' : 'bg-black/10'
+                                ? 'bg-gradient-to-t from-[#84cc16] to-[#d9ff34]'
+                                : isDark ? 'bg-white/10' : 'bg-white/55'
                             }`}
                             style={{ height: bar.height }}
                             title={`${bar.label}: ${format(bar.amount)}`}
@@ -642,18 +661,18 @@ const Income = () => {
                 </div>
               ) : (
                 <div className={`py-16 text-center text-sm ${mutedText}`}>
-                  No income data for {MONTHS[selectedMonth]} {selectedYear}.
+                  {tt('income.noDataForMonth', 'No income data for')} {MONTHS[selectedMonth]} {selectedYear}.
                 </div>
               )}
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-            <section className={`rounded-[28px] border p-8 ${cardClass}`}>
-              <div className={`flex flex-col gap-4 border-b pb-6 lg:flex-row lg:items-center lg:justify-between ${sectionDivider}`}>
-                <h2 className={`text-[22px] font-bold ${isDark ? 'text-white' : 'text-[#11131b]'}`}>Income Sources</h2>
+          <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+            <section className={`rounded-[24px] border p-6 ${cardClass}`}>
+              <div className={`flex flex-col gap-3 border-b pb-5 lg:flex-row lg:items-center lg:justify-between ${sectionDivider}`}>
+                <h2 className={`text-[22px] font-bold ${isDark ? 'text-white' : 'text-[#11131b]'}`}>{tt('income.sources', 'Income Sources')}</h2>
 
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-2.5">
                   <button
                     type="button"
                     onClick={handleDownloadIncomeDetails}
@@ -661,7 +680,7 @@ const Income = () => {
                   >
                     <span className="inline-flex items-center gap-2">
                       <LuDownload />
-                      Export
+                      {tt('income.export', 'Export')}
                     </span>
                   </button>
 
@@ -672,12 +691,12 @@ const Income = () => {
                   >
                     <span className="inline-flex items-center gap-2">
                       <LuTrash2 />
-                      Bulk Delete
+                      {tt('income.bulkDelete', 'Bulk Delete')}
                     </span>
                   </button>
 
                   <FilterControl
-                    items={incomeData}
+                    items={periodIncome}
                     fieldMap={{
                       date: 'date',
                       category: 'category',
@@ -691,15 +710,19 @@ const Income = () => {
                 </div>
               </div>
 
-              <div className="space-y-5 pt-6">
+              <div className="space-y-4 pt-5">
                 {visibleSources.length ? (
                   visibleSources.map((item) => (
                     <div
                       key={item._id}
-                      className={`flex flex-col gap-4 rounded-2xl border border-transparent px-3 py-3 transition-colors md:flex-row md:items-center md:justify-between ${isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-black/[0.03]'}`}
+                      className={`flex flex-col gap-3 rounded-2xl border px-3 py-3 transition-all md:flex-row md:items-center md:justify-between ${
+                        isDark
+                          ? 'border-white/0 bg-white/[0.03] hover:border-white/10 hover:bg-white/[0.06]'
+                          : 'border-white/0 bg-white/45 hover:border-white/45 hover:bg-white/65'
+                      }`}
                     >
                       <div className="flex items-center gap-4">
-                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-xl ${isDark ? 'bg-[#2b3517]' : 'bg-[#eef6cb]'}`}>
+                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-xl shadow-lg ${isDark ? 'bg-[#2b3517] text-[#d9ff34]' : 'bg-[#eef6cb] text-[#84cc16]'}`}>
                           {renderIncomeIcon(item.icon)}
                         </div>
                         <div>
@@ -713,10 +736,10 @@ const Income = () => {
                       </div>
 
                       <div className="flex items-center gap-3 md:min-w-[280px] md:justify-end">
-                        <span className="rounded-xl bg-[#d9ff34]/10 px-4 py-2 text-sm font-bold text-[#d9ff34]">
+                        <span className={`rounded-xl px-4 py-2 text-sm font-bold backdrop-blur-2xl ${isDark ? 'bg-[#d9ff34]/12 text-[#d9ff34]' : 'bg-[#84cc16]/12 text-[#84cc16]'}`}>
                           Income
                         </span>
-                        <span className="min-w-[120px] text-right text-[18px] font-black text-[#d9ff34]">
+                        <span className={`min-w-[120px] text-right text-[18px] font-black ${isDark ? 'text-[#d9ff34]' : 'text-[#84cc16]'}`}>
                           +{format(item.amount)}
                         </span>
                         <button
@@ -725,7 +748,7 @@ const Income = () => {
                             setSelectedIncome(item);
                             setOpenEditIncomeModal(true);
                           }}
-                          className={`rounded-xl border p-2 ${isDark ? 'border-white/10 text-[#aab0c5] hover:bg-white/[0.05]' : 'border-black/10 text-[#4e5569] hover:bg-black/[0.04]'}`}
+                          className={`rounded-xl border p-2 transition-all backdrop-blur-3xl ${isDark ? 'border-white/10 bg-white/[0.05] text-[#aab0c5] hover:bg-white/[0.1]' : 'border-white/45 bg-white/58 text-[#4e5569] hover:bg-white/88'}`}
                           aria-label="Edit income"
                         >
                           <LuPencil />
@@ -735,7 +758,7 @@ const Income = () => {
                           onClick={() =>
                             setOpenDeleteAlert({ show: true, data: item._id })
                           }
-                          className={`rounded-xl border p-2 ${isDark ? 'border-white/10 text-[#aab0c5] hover:bg-white/[0.05]' : 'border-black/10 text-[#4e5569] hover:bg-black/[0.04]'}`}
+                          className={`rounded-xl border p-2 transition-all backdrop-blur-3xl ${isDark ? 'border-white/10 bg-white/[0.05] text-[#aab0c5] hover:bg-white/[0.1]' : 'border-white/45 bg-white/58 text-[#4e5569] hover:bg-white/88'}`}
                           aria-label="Delete income"
                         >
                           <LuTrash2 />
@@ -745,19 +768,19 @@ const Income = () => {
                   ))
                 ) : (
                   <div className={`py-10 text-sm ${mutedText}`}>
-                    No income data available for the current filters.
+                    {tt('income.noDataFilter', 'No income data available for the current filters.')}
                   </div>
                 )}
               </div>
             </section>
 
-            <aside className={`rounded-[28px] border p-8 ${cardClass}`}>
+            <aside className={`rounded-[24px] border p-6 ${cardClass}`}>
               <div className="mb-6 flex items-center justify-between">
                 <h3 className={`text-[13px] font-black uppercase tracking-[0.14em] ${isDark ? 'text-white' : 'text-[#11131b]'}`}>
-                  Monthly Pace
+                  {tt('dashboard.monthlyPace', 'Monthly Pace')}
                 </h3>
                 <span className={`text-[11px] font-bold uppercase tracking-[0.22em] ${mutedText}`}>
-                  Last 4 Months
+                  {tt('dashboard.last4Months', 'Last 4 Months')}
                 </span>
               </div>
 
@@ -767,13 +790,13 @@ const Income = () => {
                     <div key={item.label}>
                       <div className="mb-2 flex items-center justify-between gap-4">
                         <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-[#11131b]'}`}>{item.label}</p>
-                        <p className="text-sm font-bold text-[#9b51e0]">
+                        <p className="text-sm font-bold text-[#84cc16]">
                           {format(item.amount)}
                         </p>
                       </div>
-                      <div className={`h-2 overflow-hidden rounded-full ${isDark ? 'bg-white/[0.04]' : 'bg-black/[0.06]'}`}>
+                      <div className={`h-2 overflow-hidden rounded-full ${isDark ? 'bg-white/[0.06]' : 'bg-white/58'}`}>
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-[#9b51e0] to-[#4f46e5]"
+                          className="h-full rounded-full bg-gradient-to-r from-[#d9ff34] via-[#84cc16] to-[#47d7ff]"
                           style={{
                             width: `${Math.max(
                               12,
@@ -786,20 +809,20 @@ const Income = () => {
                   ))
                 ) : (
                   <p className={`text-sm ${mutedText}`}>
-                    Monthly pacing appears here once income starts coming in.
+                    {tt('income.pacingFallback', 'Monthly pacing appears here once income starts coming in.')}
                   </p>
                 )}
               </div>
 
               <div className={`mt-8 rounded-2xl border p-5 ${subtleSurface}`}>
                 <div className={`text-[11px] uppercase tracking-[0.22em] ${mutedText}`}>
-                  All-time total
+                  {tt('dashboard.allTimeTotal', 'All-time total')}
                 </div>
-                <div className={`mt-2 text-3xl font-black ${isDark ? 'text-white' : 'text-[#11131b]'}`}>
+                <div className={`mt-2 text-2xl font-black ${isDark ? 'text-white' : 'text-[#11131b]'}`}>
                   {format(dashboardData?.totalIncome || 0)}
                 </div>
                 <div className={`mt-3 text-sm ${mutedText}`}>
-                  Net balance: {format(dashboardData?.totalBalance || 0)}
+                  {tt('income.netBalance', 'Net balance:')} {format(dashboardData?.totalBalance || 0)}
                 </div>
               </div>
             </aside>
@@ -808,7 +831,8 @@ const Income = () => {
           <Modal
             isOpen={openAddIncomeModal}
             onClose={() => setOpenAddIncomeModal(false)}
-            title="Add Income"
+            title={tt('income.add', 'Add Income')}
+            accent="income"
           >
             <AddIncomeForm onAddIncome={handleAddIncome} mode="add" variant="neon" />
           </Modal>
@@ -816,7 +840,8 @@ const Income = () => {
           <Modal
             isOpen={openEditIncomeModal}
             onClose={() => setOpenEditIncomeModal(false)}
-            title="Edit Income"
+            title={tt('income.edit', 'Edit Income')}
+            accent="income"
           >
             <AddIncomeForm
               mode="edit"
@@ -830,6 +855,7 @@ const Income = () => {
             isOpen={openDeleteAlert.show}
             onClose={() => setOpenDeleteAlert({ show: false, data: null })}
             title={tt('income.deleteIncome', 'Delete Income')}
+            accent="neutral"
           >
             <DeleteAlert
               content={tt(
@@ -844,6 +870,7 @@ const Income = () => {
             isOpen={openBulkDeleteModal}
             onClose={() => setOpenBulkDeleteModal(false)}
             title={tt('income.bulkDeleteIncome', 'Bulk Delete Income')}
+            accent="neutral"
           >
             <BulkDeleteIncome
               isOpen={openBulkDeleteModal}

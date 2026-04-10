@@ -62,7 +62,7 @@ const BulkDeleteIncome = ({
             className={`flex cursor-pointer items-start gap-4 rounded-2xl p-4 transition-colors ${
               bulkDeletePeriod === item.value
                 ? isNeon
-                  ? 'border border-[#d9ff34]/20 bg-[#d9ff34]/10'
+                  ? isDarkTheme ? 'border border-[#d9ff34]/20 bg-[#d9ff34]/10' : 'border border-[#84cc16]/40 bg-[#84cc16]/5'
                   : 'border border-gray-600 bg-gray-700'
                 : isNeon
                 ? 'border border-white/10 bg-white/[0.03] hover:bg-white/[0.05]'
@@ -90,7 +90,7 @@ const BulkDeleteIncome = ({
             </div>
 
             {bulkDeletePeriod === item.value && (
-              <span className={isNeon ? 'text-sm font-bold text-[#d9ff34]' : 'text-white'}>
+              <span className={isNeon ? `text-sm font-bold ${isDarkTheme ? 'text-[#d9ff34]' : 'text-[#84cc16]'}` : 'text-white'}>
                 {isNeon ? 'Selected' : '✓'}
               </span>
             )}
@@ -111,7 +111,7 @@ const BulkDeleteIncome = ({
         </button>
         <button
           onClick={handleConfirm}
-          className={isNeon ? 'rounded-2xl bg-[#d9ff34] px-4 py-2 text-sm font-bold text-black hover:bg-[#cbf029]' : `px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+          className={isNeon ? `rounded-2xl px-4 py-2 text-sm font-bold transition-all ${isDarkTheme ? 'bg-[#d9ff34] text-black hover:bg-[#cbf029]' : 'bg-[#84cc16] text-white hover:bg-[#65a30d]'}` : `px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
             isDarkTheme
               ? 'bg-red-600 hover:bg-red-700 text-white'
               : 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white'
